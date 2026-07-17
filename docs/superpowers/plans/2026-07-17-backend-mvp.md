@@ -2458,7 +2458,7 @@ git commit -m "feat: implement GET ai-result with rule-based analyzer"
 
 ---
 
-### Task 14: GET /home (getHomePage)
+### Task 14: GET /home (getHomePage) — ✅ COMPLETE (commit de18ef0)
 
 **Files:**
 - Create: `web/dto/GameModeDto.java`, `web/dto/PlayerStatsDto.java`, `web/dto/HomePageDto.java`
@@ -2471,7 +2471,7 @@ git commit -m "feat: implement GET ai-result with rule-based analyzer"
 - Consumes: `InterviewRepository`, `InterviewRoundRepository`.
 - Produces: `PlayerStatsService.aggregate(): PlayerStatsDto` (global over interviews with status ≠ IN_PROGRESS). `GameModeDto(Mode mode, String title, String description, int questionCount)`; `PlayerStatsDto(int gamesPlayed, float winRate, int bestResult, int candidatesHired)`; `HomePageDto(String title, String subtitle, List<GameModeDto> modes, PlayerStatsDto playerStats)`. Win = correctCount ≥ 60% of totalQuestions.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```java
 package com.techleadsim.web;
@@ -2503,11 +2503,11 @@ class GetHomeTest extends AbstractPostgresIntegrationTest {
 }
 ```
 
-- [ ] **Step 2: Run it — expect FAIL**
+- [x] **Step 2: Run it — expect FAIL**
 
 Run: `./mvnw test -Dtest=GetHomeTest`
 
-- [ ] **Step 3: Add aggregate queries to the repositories**
+- [x] **Step 3: Add aggregate queries to the repositories**
 
 ```java
 // InterviewRepository — add:
@@ -2523,7 +2523,7 @@ long countByHiredCandidateIdIsNotNull();
 long countByInterviewIdAndCorrectIsTrue(Long interviewId);
 ```
 
-- [ ] **Step 4: Write `PlayerStatsService`**
+- [x] **Step 4: Write `PlayerStatsService`**
 
 ```java
 package com.techleadsim.service;
@@ -2571,7 +2571,7 @@ public class PlayerStatsService {
 }
 ```
 
-- [ ] **Step 5: Write the DTOs**
+- [x] **Step 5: Write the DTOs**
 
 ```java
 package com.techleadsim.web.dto;
@@ -2590,7 +2590,7 @@ import java.util.List;
 public record HomePageDto(String title, String subtitle, List<GameModeDto> modes, PlayerStatsDto playerStats) {}
 ```
 
-- [ ] **Step 6: Write `HomeController`**
+- [x] **Step 6: Write `HomeController`**
 
 ```java
 package com.techleadsim.web;
@@ -2625,11 +2625,11 @@ public class HomeController {
 }
 ```
 
-- [ ] **Step 7: Run — expect PASS**
+- [x] **Step 7: Run — expect PASS**
 
 Run: `./mvnw test -Dtest=GetHomeTest`
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add backend/src/main/java/com/techleadsim backend/src/test/java/com/techleadsim/web/GetHomeTest.java
