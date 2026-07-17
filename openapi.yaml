@@ -1,0 +1,661 @@
+openapi: 3.1.0
+
+info:
+  title: Tech Lead Simulator API
+  version: 0.1.0
+  description: |
+    Contract-first API for the Tech Lead Simulator MVP — a game where the player
+    conducts an interview with virtual candidates.
+
+    ## Game flow (MVP "In Scope")
+    1. Player starts an interview session (`POST /interviews`).
+    2. For each of 10 rounds:
+       - Player asks for a question (`GET /interviews/{interviewId}/question`).
+         The response carries the question **and** one answer from every virtual
+         candidate — exactly one of those answers is correct (server never marks
+         which one before the player answers).
+       - Player picks the answer they think is correct
+         (`POST /interviews/{interviewId}/answers`) and gets immediate feedback.
+    3. After 10 rounds the player sees per-candidate statistics — how many times
+       each candidate's answer was chosen (`GET /interviews/{interviewId}/statistic`).
+    4. Player makes an offer to one candidate (`POST /interviews/{interviewId}/offer`).
+    5. Player reads the score result (`GET /interviews/{interviewId}/result`) and the
+       AI analysis with a learning roadmap (`GET /interviews/{interviewId}/ai-result`).
+
+    ## Design notes
+    - This is the single source of truth for BE ↔ FE parallel work. Change the
+      contract here first, regenerate/agree, then implement.
+    - Original client method → endpoint mapping:
+      `getHomePage()` → `GET /home`,
+      `start(context)` → `POST /interviews`,
+      `getQuestion()` → `GET /interviews/{id}/question`,
+      `saveAnswer(question, answer)` → `POST /interviews/{id}/answers`,
+      `getInterviewStatistic()` → `GET /interviews/{id}/statistic`,
+      `offer(person)` → `POST /interviews/{id}/offer`,
+      `getInterviewResult(id)` → `GET /interviews/{id}/result`,
+      `getAiiInterviewResult(id)` → `GET /interviews/{id}/ai-result`.
+    - `getQuestion` and `getInterviewStatistic` had no arguments in the original
+      sketch; they are interview-scoped here so the API stays stateless and can be
+      load-balanced horizontally (supports the 98%/week availability NFR).
+
+    ## Non-functional
+    - Target availability: **98% per week** (≈ 3h 22m allowed downtime / week).
+
+servers:
+  - url: http://localhost:8080/api
+    description: Local backend (Spring Boot, dev)
+  - url: /api
+    description: Same-origin (relative) — use behind a reverse proxy
+
+tags:
+  - name: Home
+    description: Landing screen and player profile
+  - name: Interview
+    description: Interview session lifecycle — questions, answers, offer, results
+
+paths:
+  /home:
+    get:
+      tags: [Home]
+      operationId: getHomePage
+      summary: Home / main menu screen data
+      description: Landing data — title, available modes and the player's aggregate stats.
+      responses:
+        '200':
+          description: Home page payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HomePage'
+
+  /interviews:
+    post:
+      tags: [Interview]
+      operationId: startInterview
+      summary: Start a new interview session
+      description: |
+        Creates an interview session and returns its `interviewId` plus the
+        candidate lineup. `context` selects mode and difficulty.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartInterviewRequest'
+      responses:
+        '201':
+          description: Interview session created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InterviewSession'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /interviews/{interviewId}/question:
+    get:
+      tags: [Interview]
+      operationId: getQuestion
+      summary: Get the current question with candidate answers
+      description: |
+        Returns the next unanswered question for the session, its position in the
+        run (`index` of `total`), the answer time limit, and one answer per
+        candidate. The correct answer is **not** flagged in this response.
+      parameters:
+        - $ref: '#/components/parameters/InterviewId'
+      responses:
+        '200':
+          description: Current question
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Question'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: No question available — all rounds already answered.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /interviews/{interviewId}/answers:
+    post:
+      tags: [Interview]
+      operationId: saveAnswer
+      summary: Submit the chosen answer for a question
+      description: |
+        Records the player's chosen answer for a question and returns immediate
+        feedback (correct/incorrect, the correct answer id, points awarded and the
+        running score/streak). Maps to `saveAnswer(question, answer)`.
+      parameters:
+        - $ref: '#/components/parameters/InterviewId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnswerRequest'
+      responses:
+        '200':
+          description: Answer recorded, feedback returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnswerResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Question already answered.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /interviews/{interviewId}/statistic:
+    get:
+      tags: [Interview]
+      operationId: getInterviewStatistic
+      summary: Per-candidate selection statistics
+      description: |
+        How many times each candidate's answer was chosen across the run, plus the
+        overall correct count. Shown before the offer screen (requirement 4).
+      parameters:
+        - $ref: '#/components/parameters/InterviewId'
+      responses:
+        '200':
+          description: Interview statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InterviewStatistic'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /interviews/{interviewId}/offer:
+    post:
+      tags: [Interview]
+      operationId: offer
+      summary: Make an offer to (hire) a candidate
+      description: Player chooses which candidate to hire. Maps to `offer(person)`.
+      parameters:
+        - $ref: '#/components/parameters/InterviewId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OfferRequest'
+      responses:
+        '200':
+          description: Offer recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OfferResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /interviews/{interviewId}/result:
+    get:
+      tags: [Interview]
+      operationId: getInterviewResult
+      summary: Final score result of the interview
+      description: |
+        The end-of-game result screen — score (correct of total), points, best
+        streak and a per-question breakdown. Maps to `getInterviewResult(id)`.
+      parameters:
+        - $ref: '#/components/parameters/InterviewId'
+      responses:
+        '200':
+          description: Interview result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InterviewResult'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /interviews/{interviewId}/ai-result:
+    get:
+      tags: [Interview]
+      operationId: getAiInterviewResult
+      summary: AI analysis and learning roadmap
+      description: |
+        AI-generated analysis of the player's decisions, the hiring verdict and a
+        roadmap of topics to study. May be computed asynchronously — see the
+        `status` field. Maps to `getAiiInterviewResult(id)`.
+      parameters:
+        - $ref: '#/components/parameters/InterviewId'
+      responses:
+        '200':
+          description: AI result (ready)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiInterviewResult'
+        '202':
+          description: AI result is still being generated — retry later.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiInterviewResult'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  parameters:
+    InterviewId:
+      name: interviewId
+      in: path
+      required: true
+      description: Interview session identifier returned by `POST /interviews`.
+      schema:
+        type: integer
+        format: int64
+        examples: [1001]
+
+  responses:
+    BadRequest:
+      description: Malformed or invalid request.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Interview session or referenced entity not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+
+    HomePage:
+      type: object
+      required: [title, modes, playerStats]
+      properties:
+        title:
+          type: string
+          examples: ["Tech Lead Simulator"]
+        subtitle:
+          type: string
+          examples: ["Pass the interview and build the best team!"]
+        modes:
+          type: array
+          items:
+            $ref: '#/components/schemas/GameMode'
+        playerStats:
+          $ref: '#/components/schemas/PlayerStats'
+
+    GameMode:
+      type: object
+      required: [mode, title, questionCount]
+      properties:
+        mode:
+          $ref: '#/components/schemas/Mode'
+        title:
+          type: string
+          examples: ["Classic"]
+        description:
+          type: string
+          examples: ["Full path: 10 questions."]
+        questionCount:
+          type: integer
+          examples: [10]
+
+    PlayerStats:
+      type: object
+      description: Aggregate stats shown on the home / stats screen.
+      required: [gamesPlayed, winRate]
+      properties:
+        gamesPlayed:
+          type: integer
+          examples: [12]
+        winRate:
+          type: number
+          format: float
+          description: Win ratio 0..1.
+          examples: [0.75]
+        bestResult:
+          type: integer
+          description: Best number of correct answers in a single run.
+          examples: [8]
+        candidatesHired:
+          type: integer
+          examples: [7]
+
+    Mode:
+      type: string
+      enum: [CLASSIC, HARDCORE]
+      description: Game mode. CLASSIC = 10 questions, HARDCORE = 20.
+
+    Difficulty:
+      type: string
+      enum: [EASY, MEDIUM, HARD]
+
+    StartInterviewRequest:
+      type: object
+      description: The `context` passed to `start(context)`.
+      required: [mode]
+      properties:
+        mode:
+          $ref: '#/components/schemas/Mode'
+        difficulty:
+          $ref: '#/components/schemas/Difficulty'
+        playerName:
+          type: string
+          examples: ["You"]
+
+    InterviewSession:
+      type: object
+      required: [interviewId, mode, totalQuestions, candidates]
+      properties:
+        interviewId:
+          type: integer
+          format: int64
+          examples: [1001]
+        mode:
+          $ref: '#/components/schemas/Mode'
+        difficulty:
+          $ref: '#/components/schemas/Difficulty'
+        totalQuestions:
+          type: integer
+          examples: [10]
+        candidates:
+          type: array
+          description: The virtual candidates taking part in this interview.
+          items:
+            $ref: '#/components/schemas/Candidate'
+
+    Candidate:
+      type: object
+      required: [id, name, role]
+      properties:
+        id:
+          type: integer
+          examples: [2]
+        name:
+          type: string
+          examples: ["Alexey"]
+        role:
+          type: string
+          examples: ["Backend Developer"]
+        avatarUrl:
+          type: string
+          format: uri-reference
+          examples: ["/assets/candidates/alexey.png"]
+        strengths:
+          type: array
+          items:
+            type: string
+          examples: [["Algorithms", "Databases", "Optimization"]]
+
+    Question:
+      type: object
+      required: [questionId, index, total, text, answers]
+      properties:
+        questionId:
+          type: integer
+          examples: [3]
+        index:
+          type: integer
+          description: 1-based position of this question in the run.
+          examples: [3]
+        total:
+          type: integer
+          examples: [10]
+        text:
+          type: string
+          examples: ["How would you optimize a slow SQL query?"]
+        timeLimitSeconds:
+          type: integer
+          description: Seconds allowed to answer; null means no limit.
+          examples: [45]
+        answers:
+          type: array
+          description: One answer per candidate. Exactly one is correct (not flagged here).
+          items:
+            $ref: '#/components/schemas/AnswerOption'
+
+    AnswerOption:
+      type: object
+      required: [answerId, candidateId, text]
+      properties:
+        answerId:
+          type: integer
+          description: Identifier of this answer option (the `answer` in saveAnswer).
+          examples: [11]
+        candidateId:
+          type: integer
+          description: The candidate who gave this answer.
+          examples: [2]
+        text:
+          type: string
+          examples: ["Add indexes on the queried columns."]
+
+    AnswerRequest:
+      type: object
+      description: Body of `saveAnswer(question, answer)`.
+      required: [questionId, answerId]
+      properties:
+        questionId:
+          type: integer
+          examples: [3]
+        answerId:
+          type: integer
+          description: The answer option the player selected as correct.
+          examples: [11]
+
+    AnswerResult:
+      type: object
+      required: [correct, correctAnswerId, pointsAwarded, correctCount, currentStreak, answeredCount, totalQuestions]
+      properties:
+        correct:
+          type: boolean
+          examples: [true]
+        correctAnswerId:
+          type: integer
+          description: The answer option that was actually correct.
+          examples: [11]
+        pointsAwarded:
+          type: integer
+          examples: [10]
+        correctCount:
+          type: integer
+          description: Total correct answers so far in the run.
+          examples: [4]
+        currentStreak:
+          type: integer
+          examples: [3]
+        totalPoints:
+          type: integer
+          examples: [40]
+        answeredCount:
+          type: integer
+          description: How many questions have been answered (1..total).
+          examples: [3]
+        totalQuestions:
+          type: integer
+          examples: [10]
+        finished:
+          type: boolean
+          description: True when this was the last question of the run.
+          examples: [false]
+
+    InterviewStatistic:
+      type: object
+      required: [totalQuestions, correctCount, perCandidate]
+      properties:
+        totalQuestions:
+          type: integer
+          examples: [10]
+        correctCount:
+          type: integer
+          examples: [7]
+        perCandidate:
+          type: array
+          description: How many times each candidate's answer was chosen.
+          items:
+            $ref: '#/components/schemas/CandidateSelection'
+
+    CandidateSelection:
+      type: object
+      required: [candidateId, name, timesChosen]
+      properties:
+        candidateId:
+          type: integer
+          examples: [2]
+        name:
+          type: string
+          examples: ["Alexey"]
+        role:
+          type: string
+          examples: ["Backend Developer"]
+        timesChosen:
+          type: integer
+          description: How many times the player picked this candidate's answer.
+          examples: [7]
+
+    OfferRequest:
+      type: object
+      description: Body of `offer(person)`.
+      required: [personId]
+      properties:
+        personId:
+          type: integer
+          description: The candidate the player hires.
+          examples: [2]
+
+    OfferResult:
+      type: object
+      required: [interviewId, hiredCandidate]
+      properties:
+        interviewId:
+          type: integer
+          format: int64
+          examples: [1001]
+        hiredCandidate:
+          $ref: '#/components/schemas/Candidate'
+        message:
+          type: string
+          examples: ["Alexey has joined your team!"]
+
+    InterviewResult:
+      type: object
+      required: [interviewId, correctCount, totalQuestions, totalPoints, bestStreak, breakdown]
+      properties:
+        interviewId:
+          type: integer
+          format: int64
+          examples: [1001]
+        correctCount:
+          type: integer
+          examples: [7]
+        totalQuestions:
+          type: integer
+          examples: [10]
+        totalPoints:
+          type: integer
+          examples: [70]
+        bestStreak:
+          type: integer
+          examples: [4]
+        breakdown:
+          type: array
+          description: Per-question outcome for the detailed statistics screen.
+          items:
+            $ref: '#/components/schemas/QuestionOutcome'
+
+    QuestionOutcome:
+      type: object
+      required: [questionId, text, correct]
+      properties:
+        questionId:
+          type: integer
+          examples: [1]
+        text:
+          type: string
+          examples: ["What is SOLID?"]
+        correct:
+          type: boolean
+          examples: [true]
+
+    AiInterviewResult:
+      type: object
+      required: [interviewId, status]
+      properties:
+        interviewId:
+          type: integer
+          format: int64
+          examples: [1001]
+        status:
+          type: string
+          enum: [READY, PENDING]
+          description: PENDING while the analysis is still being generated (HTTP 202).
+          examples: [READY]
+        summary:
+          type: string
+          description: Human-readable analysis of the player's hiring decisions.
+          examples: ["You favored strong database answers but missed some architecture trade-offs."]
+        verdict:
+          type: string
+          description: Whether hiring the chosen candidate was a good call.
+          examples: ["Good hire — Alexey fits the backend-heavy roadmap."]
+        hiredCandidateId:
+          type: integer
+          examples: [2]
+        roadmap:
+          type: array
+          description: Topics the player should study, with resources.
+          items:
+            $ref: '#/components/schemas/RoadmapItem'
+
+    RoadmapItem:
+      type: object
+      required: [topic]
+      properties:
+        topic:
+          type: string
+          examples: ["Database indexing strategies"]
+        reason:
+          type: string
+          examples: ["You missed 2 questions on query optimization."]
+        priority:
+          type: string
+          enum: [LOW, MEDIUM, HIGH]
+          examples: [HIGH]
+        resources:
+          type: array
+          items:
+            $ref: '#/components/schemas/Resource'
+
+    Resource:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+          examples: ["Use The Index, Luke!"]
+        url:
+          type: string
+          format: uri
+          examples: ["https://use-the-index-luke.com/"]
+
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          examples: ["INTERVIEW_NOT_FOUND"]
+        message:
+          type: string
+          examples: ["No interview session with id 1001."]
+        timestamp:
+          type: string
+          format: date-time
