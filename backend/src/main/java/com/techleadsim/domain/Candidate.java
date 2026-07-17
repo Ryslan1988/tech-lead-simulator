@@ -17,7 +17,10 @@ public class Candidate {
     private String avatarUrl;
     private int slot;
 
-    @ElementCollection
+    // Eager: the strengths list is tiny (a handful of rows per candidate, 4 candidates total)
+    // and is read on every candidate lineup response, which is built outside a transaction
+    // (open-in-view is disabled) — lazy loading here would throw LazyInitializationException.
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "candidate_strength", joinColumns = @JoinColumn(name = "candidate_id"))
     @Column(name = "strength")
     private List<String> strengths = new ArrayList<>();
