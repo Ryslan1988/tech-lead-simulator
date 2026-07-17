@@ -6,4 +6,6 @@ import java.util.List;
 
 public interface InterviewRoundRepository extends JpaRepository<InterviewRound, Long> {
     List<InterviewRound> findByInterviewIdOrderByRoundIndexAsc(Long interviewId);
+
+    long countByInterviewIdAndCorrectIsTrue(Long interviewId);
 }
