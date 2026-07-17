@@ -2211,7 +2211,7 @@ git commit -m "feat: implement GET result"
 
 ---
 
-### Task 13: GET /interviews/{id}/ai-result (getAiInterviewResult)
+### Task 13: GET /interviews/{id}/ai-result (getAiInterviewResult) — ✅ COMPLETE (commit 4ab0a98)
 
 **Files:**
 - Create: `ai/AiAnalyzer.java`, `ai/AiAnalysis.java`, `ai/RuleBasedAiAnalyzer.java`
@@ -2223,7 +2223,7 @@ git commit -m "feat: implement GET result"
 - Consumes: `InterviewRepository`, `InterviewRoundRepository`, `QuestionTemplateRepository`, `AnswerTemplateRepository`, `CandidateRepository`.
 - Produces: `AiAnalyzer.analyze(long interviewId): AiInterviewResultDto` (always status `READY`); throws `InterviewNotFoundException`. `ResourceDto(String title, String url)`; `RoadmapItemDto(String topic, String reason, String priority, List<ResourceDto> resources)`; `AiInterviewResultDto(long interviewId, String status, String summary, String verdict, Long hiredCandidateId, List<RoadmapItemDto> roadmap)`.
 
-- [ ] **Step 1: Write the failing analyzer unit test** (uses real repos via `@SpringBootTest`)
+- [x] **Step 1: Write the failing analyzer unit test** (uses real repos via `@SpringBootTest`)
 
 ```java
 package com.techleadsim.ai;
@@ -2259,11 +2259,11 @@ class RuleBasedAiAnalyzerTest extends AbstractPostgresIntegrationTest {
 
 > Add a small package-visible helper `public List<InterviewRound> debugRounds(long id)` to `InterviewService` that returns `rounds.findByInterviewIdOrderByRoundIndexAsc(id)` — used only by tests to enumerate question ids. Alternatively, drive it through the HTTP flow like the other tests; either is acceptable.
 
-- [ ] **Step 2: Run it — expect FAIL**
+- [x] **Step 2: Run it — expect FAIL**
 
 Run: `./mvnw test -Dtest=RuleBasedAiAnalyzerTest`
 
-- [ ] **Step 3: Write the DTOs**
+- [x] **Step 3: Write the DTOs**
 
 ```java
 package com.techleadsim.web.dto;
@@ -2283,7 +2283,7 @@ public record AiInterviewResultDto(long interviewId, String status, String summa
                                    Long hiredCandidateId, List<RoadmapItemDto> roadmap) {}
 ```
 
-- [ ] **Step 4: Write the `AiAnalyzer` seam + output alias**
+- [x] **Step 4: Write the `AiAnalyzer` seam + output alias**
 
 ```java
 package com.techleadsim.ai;
@@ -2300,7 +2300,7 @@ package com.techleadsim.ai;
 public final class AiAnalysis { private AiAnalysis() {} }
 ```
 
-- [ ] **Step 5: Write `RuleBasedAiAnalyzer`**
+- [x] **Step 5: Write `RuleBasedAiAnalyzer`**
 
 ```java
 package com.techleadsim.ai;
@@ -2397,7 +2397,7 @@ public class RuleBasedAiAnalyzer implements AiAnalyzer {
 }
 ```
 
-- [ ] **Step 6: Add the controller endpoint** (inject `AiAnalyzer`; always 200)
+- [x] **Step 6: Add the controller endpoint** (inject `AiAnalyzer`; always 200)
 
 ```java
 // field + constructor param: private final com.techleadsim.ai.AiAnalyzer aiAnalyzer;
@@ -2408,7 +2408,7 @@ public AiInterviewResultDto getAiInterviewResult(@PathVariable long interviewId)
 }
 ```
 
-- [ ] **Step 7: Write the endpoint test**
+- [x] **Step 7: Write the endpoint test**
 
 ```java
 package com.techleadsim.web;
@@ -2445,11 +2445,11 @@ class GetAiResultTest extends AbstractPostgresIntegrationTest {
 }
 ```
 
-- [ ] **Step 8: Run both tests — expect PASS**
+- [x] **Step 8: Run both tests — expect PASS**
 
 Run: `./mvnw test -Dtest=RuleBasedAiAnalyzerTest,GetAiResultTest`
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add backend/src/main/java/com/techleadsim backend/src/test/java/com/techleadsim/ai backend/src/test/java/com/techleadsim/web/GetAiResultTest.java
