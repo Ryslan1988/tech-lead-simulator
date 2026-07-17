@@ -3,6 +3,7 @@ package com.techleadsim.web;
 import com.techleadsim.domain.Interview;
 import com.techleadsim.repository.CandidateRepository;
 import com.techleadsim.service.InterviewService;
+import com.techleadsim.service.InterviewService.QuestionView;
 import com.techleadsim.web.dto.*;
 import com.techleadsim.web.mapper.DtoMapper;
 import jakarta.validation.Valid;
@@ -36,5 +37,13 @@ public class InterviewController {
                 interview.getId(), interview.getMode(), interview.getDifficulty(),
                 interview.getTotalQuestions(), lineup);
         return ResponseEntity.status(HttpStatus.CREATED).body(body);
+    }
+
+    @GetMapping("/{interviewId}/question")
+    public QuestionDto getQuestion(@PathVariable long interviewId) {
+        QuestionView v = interviewService.nextQuestion(interviewId);
+        List<AnswerOptionDto> answers = v.answers().stream().map(mapper::toAnswerOption).toList();
+        return new QuestionDto(v.question().getId(), v.index(), v.total(),
+                v.question().getText(), v.question().getTimeLimitSeconds(), answers);
     }
 }

@@ -2,6 +2,8 @@ package com.techleadsim.service;
 
 import com.techleadsim.content.QuestionProvider;
 import com.techleadsim.domain.*;
+import com.techleadsim.error.InterviewNotFoundException;
+import com.techleadsim.error.NoQuestionAvailableException;
 import com.techleadsim.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,13 +17,19 @@ public class InterviewService {
     private final QuestionProvider questionProvider;
     private final InterviewRepository interviews;
     private final InterviewRoundRepository rounds;
+    private final QuestionTemplateRepository questionTemplates;
+    private final AnswerTemplateRepository answerTemplates;
 
     public InterviewService(QuestionProvider questionProvider,
                             InterviewRepository interviews,
-                            InterviewRoundRepository rounds) {
+                            InterviewRoundRepository rounds,
+                            QuestionTemplateRepository questionTemplates,
+                            AnswerTemplateRepository answerTemplates) {
         this.questionProvider = questionProvider;
         this.interviews = interviews;
         this.rounds = rounds;
+        this.questionTemplates = questionTemplates;
+        this.answerTemplates = answerTemplates;
     }
 
     @Transactional
@@ -35,5 +43,20 @@ public class InterviewService {
             rounds.save(new InterviewRound(interview.getId(), picked.get(i).getId(), i + 1));
         }
         return interview;
+    }
+
+    public record QuestionView(QuestionTemplate question, int index, int total, List<AnswerTemplate> answers) {}
+
+    @Transactional(readOnly = true)
+    public QuestionView nextQuestion(long interviewId) {
+        Interview interview = interviews.findById(interviewId)
+                .orElseThrow(() -> new InterviewNotFoundException(interviewId));
+        InterviewRound next = rounds.findByInterviewIdOrderByRoundIndexAsc(interviewId).stream()
+                .filter(r -> !r.isAnswered())
+                .findFirst()
+                .orElseThrow(() -> new NoQuestionAvailableException(interviewId));
+        QuestionTemplate q = questionTemplates.findById(next.getQuestionId()).orElseThrow();
+        List<AnswerTemplate> answers = answerTemplates.findByQuestionId(q.getId());
+        return new QuestionView(q, next.getRoundIndex(), interview.getTotalQuestions(), answers);
     }
 }
