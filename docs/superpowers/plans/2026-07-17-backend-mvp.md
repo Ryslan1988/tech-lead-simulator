@@ -1953,7 +1953,7 @@ git commit -m "feat: implement GET statistic with candidate competence"
 
 ---
 
-### Task 11: POST /interviews/{id}/offer (offer)
+### Task 11: POST /interviews/{id}/offer (offer) — ✅ COMPLETE (commit 6b3cf54)
 
 **Files:**
 - Create: `web/dto/OfferRequestDto.java`, `web/dto/OfferResultDto.java`
@@ -1964,7 +1964,7 @@ git commit -m "feat: implement GET statistic with candidate competence"
 - Consumes: `CandidateRepository`, `InterviewRepository`.
 - Produces: `InterviewService.offer(long interviewId, long personId): Candidate` — sets `hiredCandidateId`, status → `OFFERED`; throws `InterviewNotFoundException`; throws a 400 `ApiException` (`BAD_REQUEST`) if `personId` is not a real candidate. `OfferRequestDto(@NotNull Long personId)`; `OfferResultDto(long interviewId, CandidateDto hiredCandidate, String message)`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```java
 package com.techleadsim.web;
@@ -2015,11 +2015,11 @@ class OfferTest extends AbstractPostgresIntegrationTest {
 }
 ```
 
-- [ ] **Step 2: Run it — expect FAIL**
+- [x] **Step 2: Run it — expect FAIL**
 
 Run: `./mvnw test -Dtest=OfferTest`
 
-- [ ] **Step 3: Write the DTOs**
+- [x] **Step 3: Write the DTOs**
 
 ```java
 package com.techleadsim.web.dto;
@@ -2033,7 +2033,7 @@ package com.techleadsim.web.dto;
 public record OfferResultDto(long interviewId, CandidateDto hiredCandidate, String message) {}
 ```
 
-- [ ] **Step 4: Add a generic 400 exception** — `error/InvalidRequestException.java`
+- [x] **Step 4: Add a generic 400 exception** — `error/InvalidRequestException.java`
 
 ```java
 package com.techleadsim.error;
@@ -2046,7 +2046,7 @@ public class InvalidRequestException extends ApiException {
 }
 ```
 
-- [ ] **Step 5: Add `offer` to `InterviewService`** (inject `CandidateRepository`)
+- [x] **Step 5: Add `offer` to `InterviewService`** (inject `CandidateRepository`)
 
 ```java
 // field + constructor param: private final CandidateRepository candidates;
@@ -2064,7 +2064,7 @@ public Candidate offer(long interviewId, long personId) {
 }
 ```
 
-- [ ] **Step 6: Add the controller endpoint**
+- [x] **Step 6: Add the controller endpoint**
 
 ```java
 @PostMapping("/{interviewId}/offer")
@@ -2075,11 +2075,11 @@ public OfferResultDto offer(@PathVariable long interviewId, @Valid @RequestBody 
 }
 ```
 
-- [ ] **Step 7: Run — expect PASS**
+- [x] **Step 7: Run — expect PASS**
 
 Run: `./mvnw test -Dtest=OfferTest`
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add backend/src/main/java/com/techleadsim backend/src/test/java/com/techleadsim/web/OfferTest.java
