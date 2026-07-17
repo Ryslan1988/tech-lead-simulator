@@ -1771,7 +1771,7 @@ git commit -m "feat: implement POST answers (saveAnswer)"
 
 ---
 
-### Task 10: GET /interviews/{id}/statistic (getInterviewStatistic)
+### Task 10: GET /interviews/{id}/statistic (getInterviewStatistic) — ✅ COMPLETE (commits 0bc0f81, b6ae3c3)
 
 **Files:**
 - Create: `web/dto/CandidateSelectionDto.java`, `web/dto/InterviewStatisticDto.java`
@@ -1783,7 +1783,7 @@ git commit -m "feat: implement POST answers (saveAnswer)"
 - Consumes: `InterviewRepository`, `InterviewRoundRepository`, `AnswerTemplateRepository.findByQuestionIdInOrderById`, `CandidateRepository`.
 - Produces: `StatisticService.compute(long interviewId): InterviewStatisticDto` — throws `InterviewNotFoundException`. `CandidateSelectionDto(long candidateId, String name, String role, int timesChosen, int correctAnswers)`; `InterviewStatisticDto(int totalQuestions, int correctCount, List<CandidateSelectionDto> perCandidate)`. `timesChosen` = player picks of that candidate's answer; `correctAnswers` = rounds where that candidate's slot held the correct answer.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```java
 package com.techleadsim.web;
@@ -1837,11 +1837,11 @@ class GetStatisticTest extends AbstractPostgresIntegrationTest {
 }
 ```
 
-- [ ] **Step 2: Run it — expect FAIL**
+- [x] **Step 2: Run it — expect FAIL**
 
 Run: `./mvnw test -Dtest=GetStatisticTest`
 
-- [ ] **Step 3:ё Write the DTOs**
+- [x] **Step 3: Write the DTOs**
 
 ```java
 package com.techleadsim.web.dto;
@@ -1857,7 +1857,7 @@ public record InterviewStatisticDto(int totalQuestions, int correctCount,
                                     List<CandidateSelectionDto> perCandidate) {}
 ```
 
-- [ ] **Step 4: Write `StatisticService`**
+- [x] **Step 4: Write `StatisticService`**
 
 ```java
 package com.techleadsim.service;
@@ -1929,7 +1929,7 @@ public class StatisticService {
 }
 ```
 
-- [ ] **Step 5: Add the controller endpoint** (inject `StatisticService`)
+- [x] **Step 5: Add the controller endpoint** (inject `StatisticService`)
 
 ```java
 // field + constructor param: private final StatisticService statisticService;
@@ -1940,11 +1940,11 @@ public InterviewStatisticDto getInterviewStatistic(@PathVariable long interviewI
 }
 ```
 
-- [ ] **Step 6: Run — expect PASS**
+- [x] **Step 6: Run — expect PASS**
 
 Run: `./mvnw test -Dtest=GetStatisticTest`
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add backend/src/main/java/com/techleadsim backend/src/test/java/com/techleadsim/web/GetStatisticTest.java
