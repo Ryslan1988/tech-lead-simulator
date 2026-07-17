@@ -1,5 +1,6 @@
 package com.techleadsim.web;
 
+import com.techleadsim.ai.AiAnalyzer;
 import com.techleadsim.domain.Interview;
 import com.techleadsim.repository.CandidateRepository;
 import com.techleadsim.service.InterviewService;
@@ -23,14 +24,16 @@ public class InterviewController {
     private final CandidateRepository candidates;
     private final DtoMapper mapper;
     private final StatisticService statisticService;
+    private final AiAnalyzer aiAnalyzer;
 
     public InterviewController(InterviewService interviewService,
                                CandidateRepository candidates, DtoMapper mapper,
-                               StatisticService statisticService) {
+                               StatisticService statisticService, AiAnalyzer aiAnalyzer) {
         this.interviewService = interviewService;
         this.candidates = candidates;
         this.mapper = mapper;
         this.statisticService = statisticService;
+        this.aiAnalyzer = aiAnalyzer;
     }
 
     @PostMapping
@@ -74,5 +77,10 @@ public class InterviewController {
         com.techleadsim.domain.Candidate hired = interviewService.offer(interviewId, req.personId());
         return new OfferResultDto(interviewId, mapper.toCandidateDto(hired),
                 hired.getName() + " has joined your team!");
+    }
+
+    @GetMapping("/{interviewId}/ai-result")
+    public AiInterviewResultDto getAiInterviewResult(@PathVariable long interviewId) {
+        return aiAnalyzer.analyze(interviewId);
     }
 }
