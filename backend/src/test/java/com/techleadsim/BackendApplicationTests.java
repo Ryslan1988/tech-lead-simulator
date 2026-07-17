@@ -1,13 +1,12 @@
 package com.techleadsim;
 
+import com.techleadsim.support.AbstractPostgresIntegrationTest;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-class BackendApplicationTests {
+class BackendApplicationTests extends AbstractPostgresIntegrationTest {
 
-	@Test
-	void contextLoads() {
-	}
+    @Test
+    void contextLoads() {
+    }
 
 }
