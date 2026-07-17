@@ -4,6 +4,7 @@ import com.techleadsim.content.QuestionProvider;
 import com.techleadsim.domain.*;
 import com.techleadsim.error.InterviewNotFoundException;
 import com.techleadsim.error.NoQuestionAvailableException;
+import com.techleadsim.error.QuestionAlreadyAnsweredException;
 import com.techleadsim.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,17 +20,20 @@ public class InterviewService {
     private final InterviewRoundRepository rounds;
     private final QuestionTemplateRepository questionTemplates;
     private final AnswerTemplateRepository answerTemplates;
+    private final ScoringService scoring;
 
     public InterviewService(QuestionProvider questionProvider,
                             InterviewRepository interviews,
                             InterviewRoundRepository rounds,
                             QuestionTemplateRepository questionTemplates,
-                            AnswerTemplateRepository answerTemplates) {
+                            AnswerTemplateRepository answerTemplates,
+                            ScoringService scoring) {
         this.questionProvider = questionProvider;
         this.interviews = interviews;
         this.rounds = rounds;
         this.questionTemplates = questionTemplates;
         this.answerTemplates = answerTemplates;
+        this.scoring = scoring;
     }
 
     @Transactional
@@ -58,5 +62,56 @@ public class InterviewService {
         QuestionTemplate q = questionTemplates.findById(next.getQuestionId()).orElseThrow();
         List<AnswerTemplate> answers = answerTemplates.findByQuestionId(q.getId());
         return new QuestionView(q, next.getRoundIndex(), interview.getTotalQuestions(), answers);
+    }
+
+    public record AnswerResult(boolean correct, long correctAnswerId, int pointsAwarded,
+                               int correctCount, int currentStreak, int totalPoints,
+                               int answeredCount, int totalQuestions, boolean finished) {}
+
+    @Transactional
+    public AnswerResult saveAnswer(long interviewId, long questionId, long answerId) {
+        Interview interview = interviews.findById(interviewId)
+                .orElseThrow(() -> new InterviewNotFoundException(interviewId));
+        List<InterviewRound> ordered = rounds.findByInterviewIdOrderByRoundIndexAsc(interviewId);
+
+        InterviewRound round = ordered.stream()
+                .filter(r -> r.getQuestionId().equals(questionId))
+                .findFirst()
+                .orElseThrow(() -> new InterviewNotFoundException(interviewId));
+        if (round.isAnswered()) {
+            throw new QuestionAlreadyAnsweredException(questionId);
+        }
+
+        long correctAnswerId = answerTemplates.findByQuestionId(questionId).stream()
+                .filter(AnswerTemplate::isCorrect).findFirst().orElseThrow().getId();
+        boolean correct = answerId == correctAnswerId;
+
+        int streakBefore = trailingStreak(ordered);
+        int points = scoring.pointsFor(correct, streakBefore);
+        round.record(answerId, correct, points);
+        rounds.save(round);
+
+        // recompute aggregates from the (now updated) rounds
+        List<InterviewRound> after = rounds.findByInterviewIdOrderByRoundIndexAsc(interviewId);
+        int answered = (int) after.stream().filter(InterviewRound::isAnswered).count();
+        int correctCount = (int) after.stream().filter(InterviewRound::isCorrect).count();
+        int totalPoints = after.stream().mapToInt(InterviewRound::getPointsAwarded).sum();
+        int currentStreak = trailingStreak(after);
+        boolean finished = answered == interview.getTotalQuestions();
+        if (finished && interview.getStatus() == InterviewStatus.IN_PROGRESS) {
+            interview.setStatus(InterviewStatus.STATISTIC);
+        }
+        return new AnswerResult(correct, correctAnswerId, points, correctCount, currentStreak,
+                totalPoints, answered, interview.getTotalQuestions(), finished);
+    }
+
+    /** Consecutive correct answers at the tail of the answered prefix. */
+    private int trailingStreak(List<InterviewRound> ordered) {
+        int streak = 0;
+        for (InterviewRound r : ordered) {
+            if (!r.isAnswered()) break;
+            streak = r.isCorrect() ? streak + 1 : 0;
+        }
+        return streak;
     }
 }
