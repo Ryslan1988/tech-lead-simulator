@@ -6,10 +6,13 @@ import com.techleadsim.error.InterviewNotFoundException;
 import com.techleadsim.error.NoQuestionAvailableException;
 import com.techleadsim.error.QuestionAlreadyAnsweredException;
 import com.techleadsim.repository.*;
+import com.techleadsim.web.dto.InterviewResultDto;
+import com.techleadsim.web.dto.QuestionOutcomeDto;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -116,6 +119,27 @@ public class InterviewService {
             streak = r.isCorrect() ? streak + 1 : 0;
         }
         return streak;
+    }
+
+    @Transactional(readOnly = true)
+    public InterviewResultDto result(long interviewId) {
+        Interview interview = interviews.findById(interviewId)
+                .orElseThrow(() -> new InterviewNotFoundException(interviewId));
+        List<InterviewRound> ordered = rounds.findByInterviewIdOrderByRoundIndexAsc(interviewId);
+
+        int correctCount = (int) ordered.stream().filter(InterviewRound::isCorrect).count();
+        int totalPoints = ordered.stream().mapToInt(InterviewRound::getPointsAwarded).sum();
+        int bestStreak = 0, run = 0;
+        List<QuestionOutcomeDto> breakdown = new ArrayList<>();
+        for (InterviewRound r : ordered) {
+            if (!r.isAnswered()) continue;
+            run = r.isCorrect() ? run + 1 : 0;
+            bestStreak = Math.max(bestStreak, run);
+            QuestionTemplate q = questionTemplates.findById(r.getQuestionId()).orElseThrow();
+            breakdown.add(new QuestionOutcomeDto(q.getId(), q.getText(), r.isCorrect()));
+        }
+        return new InterviewResultDto(interviewId, correctCount,
+                interview.getTotalQuestions(), totalPoints, bestStreak, breakdown);
     }
 
     @Transactional

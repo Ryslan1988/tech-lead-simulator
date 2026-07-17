@@ -64,6 +64,11 @@ public class InterviewController {
         return statisticService.compute(interviewId);
     }
 
+    @GetMapping("/{interviewId}/result")
+    public InterviewResultDto getInterviewResult(@PathVariable long interviewId) {
+        return interviewService.result(interviewId);
+    }
+
     @PostMapping("/{interviewId}/offer")
     public OfferResultDto offer(@PathVariable long interviewId, @Valid @RequestBody OfferRequestDto req) {
         com.techleadsim.domain.Candidate hired = interviewService.offer(interviewId, req.personId());
