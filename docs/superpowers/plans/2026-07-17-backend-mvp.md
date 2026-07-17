@@ -2638,7 +2638,7 @@ git commit -m "feat: implement GET home with global player stats"
 
 ---
 
-### Task 15: CORS + full end-to-end playthrough
+### Task 15: CORS + full end-to-end playthrough — ✅ COMPLETE (commit c9abf58)
 
 **Files:**
 - Create: `config/WebCorsConfig.java`
@@ -2648,7 +2648,7 @@ git commit -m "feat: implement GET home with global player stats"
 - Consumes: every endpoint built in Tasks 7–14.
 - Produces: CORS allowing the frontend origin `http://localhost:5173` for `/**`.
 
-- [ ] **Step 1: Write the failing end-to-end test**
+- [x] **Step 1: Write the failing end-to-end test**
 
 ```java
 package com.techleadsim.web;
@@ -2713,11 +2713,11 @@ class FullPlaythroughTest extends AbstractPostgresIntegrationTest {
 }
 ```
 
-- [ ] **Step 2: Run it — expect FAIL** if CORS bean missing causes context issues, otherwise it may already pass functionally. Run and confirm:
+- [x] **Step 2: Run it — expect FAIL** if CORS bean missing causes context issues, otherwise it may already pass functionally. Run and confirm:
 
 Run: `./mvnw test -Dtest=FullPlaythroughTest`
 
-- [ ] **Step 3: Write `WebCorsConfig`**
+- [x] **Step 3: Write `WebCorsConfig`**
 
 ```java
 package com.techleadsim.config;
@@ -2738,12 +2738,12 @@ public class WebCorsConfig implements WebMvcConfigurer {
 }
 ```
 
-- [ ] **Step 4: Run the full suite — expect PASS**
+- [x] **Step 4: Run the full suite — expect PASS**
 
 Run: `./mvnw test`
 Expected: all tests green.
 
-- [ ] **Step 5: Manual smoke (optional but recommended)**
+- [x] **Step 5: Manual smoke (optional but recommended)**
 
 ```bash
 docker compose -f backend/compose.yaml up -d
@@ -2753,7 +2753,7 @@ curl -s http://localhost:8080/api/home | head
 ```
 Expected: JSON home payload. Then `docker compose -f backend/compose.yaml down`.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add backend/src/main/java/com/techleadsim/config/WebCorsConfig.java backend/src/test/java/com/techleadsim/web/FullPlaythroughTest.java
