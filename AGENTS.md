@@ -90,6 +90,37 @@ Client method → endpoint mapping (all under base path `/api`):
 they are interview-scoped in the spec so the API stays stateless and can scale
 horizontally (helps meet the availability NFR).
 
+### Domain decisions (game mechanics)
+
+Non-obvious rules agreed during design. Full rationale:
+`docs/superpowers/specs/2026-07-17-backend-mvp-design.md`.
+
+- **`/result` is the *player's* score; `/statistic` is about the *candidates*.**
+  `getInterviewResult` returns the player's own correctness (score, points, streak,
+  per-question breakdown). It is NOT about how candidates did. Candidate performance
+  lives in `getInterviewStatistic`.
+- **Two distinct per-candidate numbers in `/statistic`:** `timesChosen` = how often the
+  **player** picked that candidate's answer; `correctAnswers` = how often that candidate
+  was **objectively** right (independent of the player). `correctAnswers` is the intended
+  basis for the hiring/offer decision; `timesChosen` shows who the player trusted. (Added
+  to the contract in v0.2.0.)
+- **Candidates must differ in competence.** Seed data assigns the correct answer per
+  (question, candidate slot) so that stronger candidates are right more often, tied to
+  their `strengths`. Without this, `correctAnswers` is uniform noise and the offer
+  decision is meaningless. This also makes the AI `verdict` coherent (hiring the actually-
+  strongest candidate = a good hire).
+- **Read endpoints are not gated on the offer.** `GET /result`, `/statistic` and
+  `/ai-result` return data as soon as all rounds are answered, regardless of whether an
+  offer was made — the frontend fetches `/result` *before* the offer step. The interview
+  status (`IN_PROGRESS → STATISTIC → OFFERED → FINISHED`) is advisory, not a hard gate on
+  these GETs.
+- **AI result is a synchronous rule-based stub (MVP)** behind an `AiAnalyzer` seam:
+  always HTTP 200 `READY`, never emits the contract's `202`/`PENDING`. The FE's 202-poll
+  path therefore never fires against the real backend.
+- **Content is seed data** behind a `QuestionProvider` seam (no LLM-generated questions
+  in MVP). Scoring: correct = `10 + 2×(streak−1)`, wrong = 0 and resets the streak.
+  `timeLimitSeconds` is a client hint — the server does not enforce it.
+
 ### Non-functional
 
 - **Availability: 98% / week** (≈ 3h 22m allowed downtime per week). Keep the API
