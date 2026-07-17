@@ -83,7 +83,7 @@ backend/compose.yaml                     local Postgres for `./mvnw spring-boot:
 
 ---
 
-### Task 1: Build setup — dependencies, config, Testcontainers base
+### Task 1: Build setup — dependencies, config, Testcontainers base — ✅ COMPLETE (commits d0911be, cb9dacb)
 
 **Files:**
 - Modify: `backend/pom.xml`
@@ -95,7 +95,7 @@ backend/compose.yaml                     local Postgres for `./mvnw spring-boot:
 **Interfaces:**
 - Produces: `AbstractPostgresIntegrationTest` — base class every `@SpringBootTest` extends; starts one shared Postgres container wired via `@ServiceConnection`.
 
-- [ ] **Step 1: Add dependencies to `pom.xml`**
+- [x] **Step 1: Add dependencies to `pom.xml`**
 
 Insert these into the existing `<dependencies>` block (keep the current webmvc, devtools, webmvc-test entries):
 
@@ -145,7 +145,7 @@ Insert these into the existing `<dependencies>` block (keep the current webmvc, 
 </dependency>
 ```
 
-- [ ] **Step 2: Extend `application.properties`**
+- [x] **Step 2: Extend `application.properties`**
 
 Append (keep the existing `spring.application.name` line):
 
@@ -167,7 +167,7 @@ spring.flyway.locations=classpath:db/migration
 server.servlet.context-path=/api
 ```
 
-- [ ] **Step 3: Create `backend/compose.yaml`** (local Postgres for manual runs)
+- [x] **Step 3: Create `backend/compose.yaml`** (local Postgres for manual runs)
 
 ```yaml
 services:
@@ -181,14 +181,14 @@ services:
       - "5432:5432"
 ```
 
-- [ ] **Step 4: Create `AbstractPostgresIntegrationTest`**
+- [x] **Step 4: Create `AbstractPostgresIntegrationTest`**
 
 ```java
 package com.techleadsim.support;
 
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -198,11 +198,11 @@ public abstract class AbstractPostgresIntegrationTest {
 
     @Container
     @ServiceConnection
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
+    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:16-alpine");
 }
 ```
 
-- [ ] **Step 5: Make `BackendApplicationTests` use the container**
+- [x] **Step 5: Make `BackendApplicationTests` use the container**
 
 ```java
 package com.techleadsim;
@@ -218,12 +218,12 @@ class BackendApplicationTests extends AbstractPostgresIntegrationTest {
 }
 ```
 
-- [ ] **Step 6: Run the test — expect PASS (context boots against Postgres, Flyway finds no migrations yet)**
+- [x] **Step 6: Run the test — expect PASS (context boots against Postgres, Flyway finds no migrations yet)**
 
 Run: `./mvnw test -Dtest=BackendApplicationTests`
 Expected: PASS. Requires Docker running.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add backend/pom.xml backend/src/main/resources/application.properties backend/compose.yaml backend/src/test/java/com/techleadsim/support/AbstractPostgresIntegrationTest.java backend/src/test/java/com/techleadsim/BackendApplicationTests.java
@@ -232,7 +232,7 @@ git commit -m "build: add JPA/Postgres/Flyway deps and Testcontainers base"
 
 ---
 
-### Task 2: Flyway migrations — schema + seed
+### Task 2: Flyway migrations — schema + seed — ✅ COMPLETE (commits a01da7b, d8500ac)
 
 **Files:**
 - Create: `backend/src/main/resources/db/migration/V1__schema.sql`
@@ -242,7 +242,7 @@ git commit -m "build: add JPA/Postgres/Flyway deps and Testcontainers base"
 **Interfaces:**
 - Produces: tables `candidate`, `candidate_strength`, `question_template`, `answer_template`, `interview`, `interview_round`; seed of 4 candidates and 20 MEDIUM questions × 4 answers. Correct-answer slot distribution: slot0=10, slot2=5, slot1=4, slot3=1.
 
-- [ ] **Step 1: Write the failing smoke test**
+- [x] **Step 1: Write the failing smoke test**
 
 ```java
 package com.techleadsim;
@@ -273,11 +273,11 @@ class MigrationSmokeTest extends AbstractPostgresIntegrationTest {
 }
 ```
 
-- [ ] **Step 2: Run it — expect FAIL** (`relation "candidate" does not exist`)
+- [x] **Step 2: Run it — expect FAIL** (`relation "candidate" does not exist`)
 
 Run: `./mvnw test -Dtest=MigrationSmokeTest`
 
-- [ ] **Step 3: Write `V1__schema.sql`**
+- [x] **Step 3: Write `V1__schema.sql`**
 
 ```sql
 create table candidate (
@@ -335,7 +335,7 @@ create index idx_round_interview on interview_round (interview_id);
 create index idx_answer_question on answer_template (question_id);
 ```
 
-- [ ] **Step 4: Write `V2__seed.sql`**
+- [x] **Step 4: Write `V2__seed.sql`**
 
 Candidates (slots 0–3, strongest→weakest = Alexey, Dmitry, Maria, Sergey):
 
@@ -461,12 +461,12 @@ insert into answer_template (id, question_id, candidate_slot, text, is_correct) 
  (80,20,3,'Require the latest browser.',false);
 ```
 
-- [ ] **Step 5: Run the smoke test — expect PASS**
+- [x] **Step 5: Run the smoke test — expect PASS**
 
 Run: `./mvnw test -Dtest=MigrationSmokeTest`
 Expected: PASS (4 candidates, ≥20 MEDIUM questions, 80 answers, 20 correct).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add backend/src/main/resources/db/migration backend/src/test/java/com/techleadsim/MigrationSmokeTest.java
@@ -475,7 +475,7 @@ git commit -m "feat: add Flyway schema and seed content"
 
 ---
 
-### Task 3: Domain model — enums, entities, repositories
+### Task 3: Domain model — enums, entities, repositories — ✅ COMPLETE (commit b7ece3b)
 
 **Files:**
 - Create: `domain/Mode.java`, `domain/Difficulty.java`, `domain/InterviewStatus.java`
@@ -487,7 +487,7 @@ git commit -m "feat: add Flyway schema and seed content"
 - Produces (entities with getters): `Candidate(id, name, role, avatarUrl, slot, strengths:List<String>)`, `QuestionTemplate(id, text, topic, difficulty:Difficulty, timeLimitSeconds:Integer)`, `AnswerTemplate(id, questionId, candidateSlot, text, correct:boolean)`, `Interview(id, mode:Mode, difficulty:Difficulty, playerName, status:InterviewStatus, totalQuestions, hiredCandidateId:Long, createdAt:Instant)`, `InterviewRound(id, interviewId, questionId, roundIndex, chosenAnswerId:Long, correct:Boolean, pointsAwarded, answered:boolean)`.
 - Produces (repositories): `CandidateRepository.findAllByOrderBySlotAsc():List<Candidate>`, `findBySlot(int):Candidate`; `QuestionTemplateRepository.findByDifficulty(Difficulty):List<QuestionTemplate>`; `AnswerTemplateRepository.findByQuestionId(Long):List<AnswerTemplate>`, `findByQuestionIdInOrderById(Collection<Long>):List<AnswerTemplate>`; `InterviewRepository extends JpaRepository<Interview,Long>`; `InterviewRoundRepository.findByInterviewIdOrderByRoundIndexAsc(Long):List<InterviewRound>`.
 
-- [ ] **Step 1: Write the failing mapping test**
+- [x] **Step 1: Write the failing mapping test**
 
 ```java
 package com.techleadsim;
@@ -499,7 +499,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -515,7 +515,7 @@ class DomainMappingTest {
 
     @Container
     @ServiceConnection
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
+    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:16-alpine");
 
     @Autowired CandidateRepository candidates;
     @Autowired QuestionTemplateRepository questions;
@@ -544,11 +544,11 @@ class DomainMappingTest {
 }
 ```
 
-- [ ] **Step 2: Run it — expect FAIL** (types don't exist / won't compile)
+- [x] **Step 2: Run it — expect FAIL** (types don't exist / won't compile)
 
 Run: `./mvnw test -Dtest=DomainMappingTest`
 
-- [ ] **Step 3: Write the enums**
+- [x] **Step 3: Write the enums**
 
 ```java
 package com.techleadsim.domain;
@@ -563,7 +563,7 @@ package com.techleadsim.domain;
 public enum InterviewStatus { IN_PROGRESS, STATISTIC, OFFERED, FINISHED }
 ```
 
-- [ ] **Step 4: Write `Candidate`**
+- [x] **Step 4: Write `Candidate`**
 
 ```java
 package com.techleadsim.domain;
@@ -601,7 +601,7 @@ public class Candidate {
 }
 ```
 
-- [ ] **Step 5: Write `QuestionTemplate` and `AnswerTemplate`**
+- [x] **Step 5: Write `QuestionTemplate` and `AnswerTemplate`**
 
 ```java
 package com.techleadsim.domain;
@@ -661,7 +661,7 @@ public class AnswerTemplate {
 }
 ```
 
-- [ ] **Step 6: Write `Interview`**
+- [x] **Step 6: Write `Interview`**
 
 ```java
 package com.techleadsim.domain;
@@ -715,7 +715,7 @@ public class Interview {
 }
 ```
 
-- [ ] **Step 7: Write `InterviewRound`**
+- [x] **Step 7: Write `InterviewRound`**
 
 ```java
 package com.techleadsim.domain;
@@ -769,7 +769,7 @@ public class InterviewRound {
 }
 ```
 
-- [ ] **Step 8: Write the repositories**
+- [x] **Step 8: Write the repositories**
 
 ```java
 package com.techleadsim.repository;
@@ -829,12 +829,12 @@ public interface InterviewRoundRepository extends JpaRepository<InterviewRound, 
 }
 ```
 
-- [ ] **Step 9: Run the test — expect PASS**
+- [x] **Step 9: Run the test — expect PASS**
 
 Run: `./mvnw test -Dtest=DomainMappingTest`
 Expected: PASS. (Also confirms `ddl-auto=validate` accepts the schema.)
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add backend/src/main/java/com/techleadsim/domain backend/src/main/java/com/techleadsim/repository backend/src/test/java/com/techleadsim/DomainMappingTest.java
@@ -843,7 +843,7 @@ git commit -m "feat: add domain entities and repositories"
 
 ---
 
-### Task 4: ScoringService
+### Task 4: ScoringService — ✅ COMPLETE (commit a443a0f)
 
 **Files:**
 - Create: `service/ScoringService.java`
@@ -852,7 +852,7 @@ git commit -m "feat: add domain entities and repositories"
 **Interfaces:**
 - Produces: `ScoringService.pointsFor(boolean correct, int streakBefore): int` — returns `0` for wrong; for correct returns `10 + 2 × ((streakBefore + 1) − 1)` = `10 + 2 × streakBefore`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```java
 package com.techleadsim.service;
@@ -882,11 +882,11 @@ class ScoringServiceTest {
 }
 ```
 
-- [ ] **Step 2: Run it — expect FAIL** (`ScoringService` not found)
+- [x] **Step 2: Run it — expect FAIL** (`ScoringService` not found)
 
 Run: `./mvnw test -Dtest=ScoringServiceTest`
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 ```java
 package com.techleadsim.service;
@@ -907,11 +907,11 @@ public class ScoringService {
 }
 ```
 
-- [ ] **Step 4: Run — expect PASS**
+- [x] **Step 4: Run — expect PASS**
 
 Run: `./mvnw test -Dtest=ScoringServiceTest`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/src/main/java/com/techleadsim/service/ScoringService.java backend/src/test/java/com/techleadsim/service/ScoringServiceTest.java
@@ -920,7 +920,7 @@ git commit -m "feat: add scoring service"
 
 ---
 
-### Task 5: Error handling infrastructure
+### Task 5: Error handling infrastructure — ✅ COMPLETE (commit 8f99c6c)
 
 **Files:**
 - Create: `error/ApiException.java`, `error/InterviewNotFoundException.java`, `error/QuestionAlreadyAnsweredException.java`, `error/NoQuestionAvailableException.java`, `error/ApiErrorResponse.java`, `error/GlobalExceptionHandler.java`
@@ -929,7 +929,7 @@ git commit -m "feat: add scoring service"
 **Interfaces:**
 - Produces: `ApiErrorResponse(String code, String message, String timestamp)`; exceptions carrying `code()` + HTTP status — `InterviewNotFoundException` (404, `INTERVIEW_NOT_FOUND`), `NoQuestionAvailableException` (409, `NO_QUESTION_AVAILABLE`), `QuestionAlreadyAnsweredException` (409, `QUESTION_ALREADY_ANSWERED`). Bean-validation failures → 400 `BAD_REQUEST`. Later tasks throw these from services.
 
-- [ ] **Step 1: Write the failing test** (a throwaway controller exercises the advice)
+- [x] **Step 1: Write the failing test** (a throwaway controller exercises the advice)
 
 ```java
 package com.techleadsim.web;
@@ -971,11 +971,11 @@ class GlobalExceptionHandlerTest {
 
 > Note: if the exact `@WebMvcTest` package import differs in Boot 4.1, resolve it via Context7; the annotation lives in the `spring-boot-webmvc-test` module.
 
-- [ ] **Step 2: Run it — expect FAIL** (types missing)
+- [x] **Step 2: Run it — expect FAIL** (types missing)
 
 Run: `./mvnw test -Dtest=GlobalExceptionHandlerTest`
 
-- [ ] **Step 3: Write `ApiException` and subclasses**
+- [x] **Step 3: Write `ApiException` and subclasses**
 
 ```java
 package com.techleadsim.error;
@@ -1028,7 +1028,7 @@ public class QuestionAlreadyAnsweredException extends ApiException {
 }
 ```
 
-- [ ] **Step 4: Write `ApiErrorResponse`**
+- [x] **Step 4: Write `ApiErrorResponse`**
 
 ```java
 package com.techleadsim.error;
@@ -1036,7 +1036,7 @@ package com.techleadsim.error;
 public record ApiErrorResponse(String code, String message, String timestamp) {}
 ```
 
-- [ ] **Step 5: Write `GlobalExceptionHandler`**
+- [x] **Step 5: Write `GlobalExceptionHandler`**
 
 ```java
 package com.techleadsim.error;
@@ -1069,11 +1069,11 @@ public class GlobalExceptionHandler {
 }
 ```
 
-- [ ] **Step 6: Run — expect PASS**
+- [x] **Step 6: Run — expect PASS**
 
 Run: `./mvnw test -Dtest=GlobalExceptionHandlerTest`
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add backend/src/main/java/com/techleadsim/error backend/src/test/java/com/techleadsim/web/GlobalExceptionHandlerTest.java
@@ -1082,7 +1082,7 @@ git commit -m "feat: add API error handling"
 
 ---
 
-### Task 6: QuestionProvider + SeedQuestionProvider
+### Task 6: QuestionProvider + SeedQuestionProvider — ✅ COMPLETE (commit f0689ad)
 
 **Files:**
 - Create: `content/QuestionProvider.java`, `content/SeedQuestionProvider.java`
@@ -1091,7 +1091,7 @@ git commit -m "feat: add API error handling"
 **Interfaces:**
 - Produces: `QuestionProvider.selectQuestions(Difficulty difficulty, int count): List<QuestionTemplate>` — returns exactly `count` questions preferring the requested difficulty, topping up from other difficulties if short; throws `IllegalStateException` if the total pool is smaller than `count`. Selection order is randomized per call.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```java
 package com.techleadsim.content;
@@ -1105,7 +1105,7 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Import;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -1121,7 +1121,7 @@ class SeedQuestionProviderTest {
 
     @Container
     @ServiceConnection
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
+    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:16-alpine");
 
     @Autowired SeedQuestionProvider provider;
     @Autowired QuestionTemplateRepository repo;
@@ -1141,11 +1141,11 @@ class SeedQuestionProviderTest {
 }
 ```
 
-- [ ] **Step 2: Run it — expect FAIL**
+- [x] **Step 2: Run it — expect FAIL**
 
 Run: `./mvnw test -Dtest=SeedQuestionProviderTest`
 
-- [ ] **Step 3: Write the interface**
+- [x] **Step 3: Write the interface**
 
 ```java
 package com.techleadsim.content;
@@ -1159,7 +1159,7 @@ public interface QuestionProvider {
 }
 ```
 
-- [ ] **Step 4: Write `SeedQuestionProvider`**
+- [x] **Step 4: Write `SeedQuestionProvider`**
 
 ```java
 package com.techleadsim.content;
@@ -1206,11 +1206,11 @@ public class SeedQuestionProvider implements QuestionProvider {
 }
 ```
 
-- [ ] **Step 5: Run — expect PASS**
+- [x] **Step 5: Run — expect PASS**
 
 Run: `./mvnw test -Dtest=SeedQuestionProviderTest`
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add backend/src/main/java/com/techleadsim/content backend/src/test/java/com/techleadsim/content/SeedQuestionProviderTest.java
@@ -1219,7 +1219,7 @@ git commit -m "feat: add seed question provider"
 
 ---
 
-### Task 7: POST /interviews (startInterview)
+### Task 7: POST /interviews (startInterview) — ✅ COMPLETE (commit cde8f79)
 
 **Files:**
 - Create: `web/dto/StartInterviewRequestDto.java`, `web/dto/CandidateDto.java`, `web/dto/InterviewSessionDto.java`
@@ -1232,7 +1232,7 @@ git commit -m "feat: add seed question provider"
 - Consumes: `QuestionProvider.selectQuestions`, `CandidateRepository`, `InterviewRepository`, `InterviewRoundRepository`.
 - Produces: `InterviewService.start(Mode mode, Difficulty difficulty, String playerName): Interview` (persists interview + rounds); `DtoMapper.toCandidateDto(Candidate)`; `CandidateDto(long id, String name, String role, String avatarUrl, List<String> strengths)`; `InterviewSessionDto(long interviewId, Mode mode, Difficulty difficulty, int totalQuestions, List<CandidateDto> candidates)`. `Mode.questionCount()` helper returns 10/20.
 
-- [ ] **Step 1: Add `questionCount()` to `Mode`** (modify `domain/Mode.java`)
+- [x] **Step 1: Add `questionCount()` to `Mode`** (modify `domain/Mode.java`)
 
 ```java
 package com.techleadsim.domain;
@@ -1247,7 +1247,7 @@ public enum Mode {
 }
 ```
 
-- [ ] **Step 2: Write the failing test**
+- [x] **Step 2: Write the failing test**
 
 ```java
 package com.techleadsim.web;
@@ -1290,11 +1290,11 @@ class StartInterviewTest extends AbstractPostgresIntegrationTest {
 }
 ```
 
-- [ ] **Step 3: Run it — expect FAIL**
+- [x] **Step 3: Run it — expect FAIL**
 
 Run: `./mvnw test -Dtest=StartInterviewTest`
 
-- [ ] **Step 4: Write the DTOs**
+- [x] **Step 4: Write the DTOs**
 
 ```java
 package com.techleadsim.web.dto;
@@ -1322,7 +1322,7 @@ public record InterviewSessionDto(long interviewId, Mode mode, Difficulty diffic
                                   int totalQuestions, List<CandidateDto> candidates) {}
 ```
 
-- [ ] **Step 5: Write `DtoMapper`** (grows over later tasks; start with candidate mapping)
+- [x] **Step 5: Write `DtoMapper`** (grows over later tasks; start with candidate mapping)
 
 ```java
 package com.techleadsim.web.mapper;
@@ -1340,7 +1340,7 @@ public class DtoMapper {
 }
 ```
 
-- [ ] **Step 6: Write `InterviewService.start`**
+- [x] **Step 6: Write `InterviewService.start`**
 
 ```java
 package com.techleadsim.service;
@@ -1384,7 +1384,7 @@ public class InterviewService {
 }
 ```
 
-- [ ] **Step 7: Write `InterviewController`** (start endpoint only for now)
+- [x] **Step 7: Write `InterviewController`** (start endpoint only for now)
 
 ```java
 package com.techleadsim.web;
@@ -1430,11 +1430,11 @@ public class InterviewController {
 }
 ```
 
-- [ ] **Step 8: Run — expect PASS**
+- [x] **Step 8: Run — expect PASS**
 
 Run: `./mvnw test -Dtest=StartInterviewTest`
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add backend/src/main/java/com/techleadsim/web backend/src/main/java/com/techleadsim/service/InterviewService.java backend/src/main/java/com/techleadsim/domain/Mode.java backend/src/test/java/com/techleadsim/web/StartInterviewTest.java
@@ -1443,7 +1443,7 @@ git commit -m "feat: implement POST /interviews (startInterview)"
 
 ---
 
-### Task 8: GET /interviews/{id}/question (getQuestion)
+### Task 8: GET /interviews/{id}/question (getQuestion) — ✅ COMPLETE (commit a4f09ca)
 
 **Files:**
 - Create: `web/dto/AnswerOptionDto.java`, `web/dto/QuestionDto.java`
@@ -1454,7 +1454,7 @@ git commit -m "feat: implement POST /interviews (startInterview)"
 - Consumes: `AnswerTemplateRepository.findByQuestionId`, `CandidateRepository.findBySlot`, `QuestionTemplateRepository`, `InterviewRoundRepository`.
 - Produces: `InterviewService.nextQuestion(long interviewId): QuestionView` where `QuestionView(QuestionTemplate question, int index, int total, List<AnswerTemplate> answers)`; throws `InterviewNotFoundException`/`NoQuestionAvailableException`. `AnswerOptionDto(long answerId, long candidateId, String text)`; `QuestionDto(long questionId, int index, int total, String text, Integer timeLimitSeconds, List<AnswerOptionDto> answers)`. Correctness is NOT exposed.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```java
 package com.techleadsim.web;
@@ -1504,11 +1504,11 @@ class GetQuestionTest extends AbstractPostgresIntegrationTest {
 }
 ```
 
-- [ ] **Step 2: Run it — expect FAIL**
+- [x] **Step 2: Run it — expect FAIL**
 
 Run: `./mvnw test -Dtest=GetQuestionTest`
 
-- [ ] **Step 3: Write the DTOs**
+- [x] **Step 3: Write the DTOs**
 
 ```java
 package com.techleadsim.web.dto;
@@ -1522,7 +1522,7 @@ public record QuestionDto(long questionId, int index, int total, String text,
                           Integer timeLimitSeconds, List<AnswerOptionDto> answers) {}
 ```
 
-- [ ] **Step 4: Add `QuestionView` + `nextQuestion` to `InterviewService`**
+- [x] **Step 4: Add `QuestionView` + `nextQuestion` to `InterviewService`**
 
 Add these fields to the constructor/class (inject the extra repositories), and the method:
 
@@ -1549,7 +1549,7 @@ public QuestionView nextQuestion(long interviewId) {
 }
 ```
 
-- [ ] **Step 5: Add question mapping to `DtoMapper`**
+- [x] **Step 5: Add question mapping to `DtoMapper`**
 
 ```java
 // add imports: com.techleadsim.domain.AnswerTemplate; com.techleadsim.repository.CandidateRepository;
@@ -1566,7 +1566,7 @@ public AnswerOptionDto toAnswerOption(AnswerTemplate a) {
 
 > The `DtoMapper` now has a constructor; keep `toCandidateDto` as-is.
 
-- [ ] **Step 6: Add the controller endpoint** (in `InterviewController`)
+- [x] **Step 6: Add the controller endpoint** (in `InterviewController`)
 
 ```java
 // add imports: com.techleadsim.service.InterviewService.QuestionView; com.techleadsim.web.dto.QuestionDto;
@@ -1580,11 +1580,11 @@ public QuestionDto getQuestion(@PathVariable long interviewId) {
 }
 ```
 
-- [ ] **Step 7: Run — expect PASS**
+- [x] **Step 7: Run — expect PASS**
 
 Run: `./mvnw test -Dtest=GetQuestionTest`
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add backend/src/main/java/com/techleadsim backend/src/test/java/com/techleadsim/web/GetQuestionTest.java
@@ -1593,7 +1593,7 @@ git commit -m "feat: implement GET question"
 
 ---
 
-### Task 9: POST /interviews/{id}/answers (saveAnswer)
+### Task 9: POST /interviews/{id}/answers (saveAnswer) — ✅ COMPLETE (commits 7ba79cf, 274eaa6)
 
 **Files:**
 - Create: `web/dto/AnswerRequestDto.java`, `web/dto/AnswerResultDto.java`
@@ -1604,7 +1604,7 @@ git commit -m "feat: implement GET question"
 - Consumes: `ScoringService.pointsFor`, `AnswerTemplateRepository`, `InterviewRoundRepository`.
 - Produces: `InterviewService.saveAnswer(long interviewId, long questionId, long answerId): AnswerResult` where `AnswerResult(boolean correct, long correctAnswerId, int pointsAwarded, int correctCount, int currentStreak, int totalPoints, int answeredCount, int totalQuestions, boolean finished)`; throws `InterviewNotFoundException` (unknown interview), `InterviewNotFoundException`-style 404 if the question isn't part of the interview, `QuestionAlreadyAnsweredException`. `AnswerRequestDto(@NotNull Long questionId, @NotNull Long answerId)`; `AnswerResultDto` mirrors `AnswerResult`. Sets interview status → `STATISTIC` when the last round is answered.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```java
 package com.techleadsim.web;
@@ -1668,11 +1668,11 @@ class SaveAnswerTest extends AbstractPostgresIntegrationTest {
 }
 ```
 
-- [ ] **Step 2: Run it — expect FAIL**
+- [x] **Step 2: Run it — expect FAIL**
 
 Run: `./mvnw test -Dtest=SaveAnswerTest`
 
-- [ ] **Step 3: Write the DTOs**
+- [x] **Step 3: Write the DTOs**
 
 ```java
 package com.techleadsim.web.dto;
@@ -1688,7 +1688,7 @@ public record AnswerResultDto(boolean correct, long correctAnswerId, int pointsA
                               int answeredCount, int totalQuestions, boolean finished) {}
 ```
 
-- [ ] **Step 4: Add `AnswerResult` record + `saveAnswer` to `InterviewService`** (inject `ScoringService`)
+- [x] **Step 4: Add `AnswerResult` record + `saveAnswer` to `InterviewService`** (inject `ScoringService`)
 
 ```java
 // add field + constructor param: private final ScoringService scoring;
@@ -1745,7 +1745,7 @@ private int trailingStreak(List<InterviewRound> ordered) {
 }
 ```
 
-- [ ] **Step 5: Add the controller endpoint**
+- [x] **Step 5: Add the controller endpoint**
 
 ```java
 // add imports: com.techleadsim.service.InterviewService.AnswerResult; com.techleadsim.web.dto.*;
@@ -1758,11 +1758,11 @@ public AnswerResultDto saveAnswer(@PathVariable long interviewId, @Valid @Reques
 }
 ```
 
-- [ ] **Step 6: Run — expect PASS**
+- [x] **Step 6: Run — expect PASS**
 
 Run: `./mvnw test -Dtest=SaveAnswerTest`
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add backend/src/main/java/com/techleadsim backend/src/test/java/com/techleadsim/web/SaveAnswerTest.java
@@ -1841,7 +1841,7 @@ class GetStatisticTest extends AbstractPostgresIntegrationTest {
 
 Run: `./mvnw test -Dtest=GetStatisticTest`
 
-- [ ] **Step 3: Write the DTOs**
+- [ ] **Step 3:ё Write the DTOs**
 
 ```java
 package com.techleadsim.web.dto;
