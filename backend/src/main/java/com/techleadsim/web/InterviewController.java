@@ -5,6 +5,7 @@ import com.techleadsim.repository.CandidateRepository;
 import com.techleadsim.service.InterviewService;
 import com.techleadsim.service.InterviewService.AnswerResult;
 import com.techleadsim.service.InterviewService.QuestionView;
+import com.techleadsim.service.StatisticService;
 import com.techleadsim.web.dto.*;
 import com.techleadsim.web.mapper.DtoMapper;
 import jakarta.validation.Valid;
@@ -21,12 +22,15 @@ public class InterviewController {
     private final InterviewService interviewService;
     private final CandidateRepository candidates;
     private final DtoMapper mapper;
+    private final StatisticService statisticService;
 
     public InterviewController(InterviewService interviewService,
-                               CandidateRepository candidates, DtoMapper mapper) {
+                               CandidateRepository candidates, DtoMapper mapper,
+                               StatisticService statisticService) {
         this.interviewService = interviewService;
         this.candidates = candidates;
         this.mapper = mapper;
+        this.statisticService = statisticService;
     }
 
     @PostMapping
@@ -53,5 +57,10 @@ public class InterviewController {
         AnswerResult r = interviewService.saveAnswer(interviewId, req.questionId(), req.answerId());
         return new AnswerResultDto(r.correct(), r.correctAnswerId(), r.pointsAwarded(), r.correctCount(),
                 r.currentStreak(), r.totalPoints(), r.answeredCount(), r.totalQuestions(), r.finished());
+    }
+
+    @GetMapping("/{interviewId}/statistic")
+    public InterviewStatisticDto getInterviewStatistic(@PathVariable long interviewId) {
+        return statisticService.compute(interviewId);
     }
 }
