@@ -2088,7 +2088,7 @@ git commit -m "feat: implement POST offer"
 
 ---
 
-### Task 12: GET /interviews/{id}/result (getInterviewResult)
+### Task 12: GET /interviews/{id}/result (getInterviewResult) — ✅ COMPLETE (commit f143129)
 
 **Files:**
 - Create: `web/dto/QuestionOutcomeDto.java`, `web/dto/InterviewResultDto.java`
@@ -2099,7 +2099,7 @@ git commit -m "feat: implement POST offer"
 - Consumes: `QuestionTemplateRepository`, `InterviewRoundRepository`.
 - Produces: `InterviewService.result(long interviewId): InterviewResultDto` — throws `InterviewNotFoundException`; NOT gated on the offer. `QuestionOutcomeDto(long questionId, String text, boolean correct)`; `InterviewResultDto(long interviewId, int correctCount, int totalQuestions, int totalPoints, int bestStreak, List<QuestionOutcomeDto> breakdown)`. `bestStreak` = longest run of consecutive correct answered rounds; breakdown covers answered rounds in order.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```java
 package com.techleadsim.web;
@@ -2146,11 +2146,11 @@ class GetResultTest extends AbstractPostgresIntegrationTest {
 }
 ```
 
-- [ ] **Step 2: Run it — expect FAIL**
+- [x] **Step 2: Run it — expect FAIL**
 
 Run: `./mvnw test -Dtest=GetResultTest`
 
-- [ ] **Step 3: Write the DTOs**
+- [x] **Step 3: Write the DTOs**
 
 ```java
 package com.techleadsim.web.dto;
@@ -2164,7 +2164,7 @@ public record InterviewResultDto(long interviewId, int correctCount, int totalQu
                                  int totalPoints, int bestStreak, List<QuestionOutcomeDto> breakdown) {}
 ```
 
-- [ ] **Step 4: Add `result` to `InterviewService`**
+- [x] **Step 4: Add `result` to `InterviewService`**
 
 ```java
 @Transactional(readOnly = true)
@@ -2189,7 +2189,7 @@ public com.techleadsim.web.dto.InterviewResultDto result(long interviewId) {
 }
 ```
 
-- [ ] **Step 5: Add the controller endpoint**
+- [x] **Step 5: Add the controller endpoint**
 
 ```java
 @GetMapping("/{interviewId}/result")
@@ -2198,11 +2198,11 @@ public InterviewResultDto getInterviewResult(@PathVariable long interviewId) {
 }
 ```
 
-- [ ] **Step 6: Run — expect PASS**
+- [x] **Step 6: Run — expect PASS**
 
 Run: `./mvnw test -Dtest=GetResultTest`
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add backend/src/main/java/com/techleadsim backend/src/test/java/com/techleadsim/web/GetResultTest.java
