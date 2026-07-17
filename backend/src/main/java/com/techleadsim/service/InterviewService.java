@@ -20,6 +20,7 @@ public class InterviewService {
     private final InterviewRoundRepository rounds;
     private final QuestionTemplateRepository questionTemplates;
     private final AnswerTemplateRepository answerTemplates;
+    private final CandidateRepository candidates;
     private final ScoringService scoring;
 
     public InterviewService(QuestionProvider questionProvider,
@@ -27,12 +28,14 @@ public class InterviewService {
                             InterviewRoundRepository rounds,
                             QuestionTemplateRepository questionTemplates,
                             AnswerTemplateRepository answerTemplates,
+                            CandidateRepository candidates,
                             ScoringService scoring) {
         this.questionProvider = questionProvider;
         this.interviews = interviews;
         this.rounds = rounds;
         this.questionTemplates = questionTemplates;
         this.answerTemplates = answerTemplates;
+        this.candidates = candidates;
         this.scoring = scoring;
     }
 
@@ -113,5 +116,17 @@ public class InterviewService {
             streak = r.isCorrect() ? streak + 1 : 0;
         }
         return streak;
+    }
+
+    @Transactional
+    public Candidate offer(long interviewId, long personId) {
+        Interview interview = interviews.findById(interviewId)
+                .orElseThrow(() -> new InterviewNotFoundException(interviewId));
+        Candidate hired = candidates.findById(personId)
+                .orElseThrow(() -> new com.techleadsim.error.InvalidRequestException(
+                        "No candidate with id " + personId + "."));
+        interview.setHiredCandidateId(hired.getId());
+        interview.setStatus(InterviewStatus.OFFERED);
+        return hired;
     }
 }

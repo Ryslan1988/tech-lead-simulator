@@ -63,4 +63,11 @@ public class InterviewController {
     public InterviewStatisticDto getInterviewStatistic(@PathVariable long interviewId) {
         return statisticService.compute(interviewId);
     }
+
+    @PostMapping("/{interviewId}/offer")
+    public OfferResultDto offer(@PathVariable long interviewId, @Valid @RequestBody OfferRequestDto req) {
+        com.techleadsim.domain.Candidate hired = interviewService.offer(interviewId, req.personId());
+        return new OfferResultDto(interviewId, mapper.toCandidateDto(hired),
+                hired.getName() + " has joined your team!");
+    }
 }
