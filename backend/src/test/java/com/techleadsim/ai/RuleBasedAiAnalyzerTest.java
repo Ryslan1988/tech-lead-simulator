@@ -19,13 +19,18 @@ class RuleBasedAiAnalyzerTest extends AbstractPostgresIntegrationTest {
     void producesReadyAnalysisWithRoadmap() {
         Interview i = interviewService.start(Mode.CLASSIC, Difficulty.MEDIUM, "You");
 
-        // Answer every round wrong by picking a definitely-wrong answer id (-1),
+        // Answer every round wrong by picking a genuinely wrong (but valid) answer option,
         // driving setup through the real InterviewService API (nextQuestion/saveAnswer)
         // rather than a test-only helper.
         boolean finished = false;
         while (!finished) {
             QuestionView q = interviewService.nextQuestion(i.getId());
-            AnswerResult result = interviewService.saveAnswer(i.getId(), q.question().getId(), -1L);
+            long wrongAnswerId = q.answers().stream()
+                    .filter(a -> !a.isCorrect())
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException("No wrong answer option found"))
+                    .getId();
+            AnswerResult result = interviewService.saveAnswer(i.getId(), q.question().getId(), wrongAnswerId);
             finished = result.finished();
         }
 

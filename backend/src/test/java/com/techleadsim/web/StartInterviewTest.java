@@ -35,4 +35,14 @@ class StartInterviewTest extends AbstractPostgresIntegrationTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("BAD_REQUEST"));
     }
+
+    @Test
+    void rejectsInvalidModeEnum() throws Exception {
+        mvc.perform(post("/interviews")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"mode\":\"BOGUS\",\"difficulty\":\"MEDIUM\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.timestamp").exists());
+    }
 }

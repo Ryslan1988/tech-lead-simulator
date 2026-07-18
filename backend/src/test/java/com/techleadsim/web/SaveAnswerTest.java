@@ -139,4 +139,45 @@ class SaveAnswerTest extends AbstractPostgresIntegrationTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("QUESTION_ALREADY_ANSWERED"));
     }
+
+    @Test
+    void foreignQuestionIdIs400NotFound() throws Exception {
+        MvcResult started = mvc.perform(post("/interviews")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"mode\":\"CLASSIC\",\"difficulty\":\"MEDIUM\"}")).andReturn();
+        long id = JsonPath.parse(started.getResponse().getContentAsString())
+                .read("$.interviewId", Integer.class);
+
+        // Not a real round of this interview: the interview itself exists, so this must be a
+        // 400 (bad request), not a 404 (interview not found).
+        long foreignQuestionId = 999_999_999L;
+
+        mvc.perform(post("/interviews/{id}/answers", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"questionId\":" + foreignQuestionId + ",\"answerId\":1}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.timestamp").exists());
+    }
+
+    @Test
+    void answerIdNotBelongingToQuestionIs400() throws Exception {
+        MvcResult started = mvc.perform(post("/interviews")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"mode\":\"CLASSIC\",\"difficulty\":\"MEDIUM\"}")).andReturn();
+        long id = JsonPath.parse(started.getResponse().getContentAsString())
+                .read("$.interviewId", Integer.class);
+
+        MvcResult q = mvc.perform(get("/interviews/{id}/question", id)).andReturn();
+        int questionId = JsonPath.parse(q.getResponse().getContentAsString()).read("$.questionId");
+
+        long foreignAnswerId = 999_999_999L;
+
+        mvc.perform(post("/interviews/{id}/answers", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"questionId\":" + questionId + ",\"answerId\":" + foreignAnswerId + "}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.timestamp").exists());
+    }
 }

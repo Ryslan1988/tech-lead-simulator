@@ -3,6 +3,7 @@ package com.techleadsim.service;
 import com.techleadsim.content.QuestionProvider;
 import com.techleadsim.domain.*;
 import com.techleadsim.error.InterviewNotFoundException;
+import com.techleadsim.error.InvalidRequestException;
 import com.techleadsim.error.NoQuestionAvailableException;
 import com.techleadsim.error.QuestionAlreadyAnsweredException;
 import com.techleadsim.repository.*;
@@ -83,12 +84,19 @@ public class InterviewService {
         InterviewRound round = ordered.stream()
                 .filter(r -> r.getQuestionId().equals(questionId))
                 .findFirst()
-                .orElseThrow(() -> new InterviewNotFoundException(interviewId));
+                .orElseThrow(() -> new InvalidRequestException(
+                        "Question " + questionId + " is not part of interview " + interviewId + "."));
         if (round.isAnswered()) {
             throw new QuestionAlreadyAnsweredException(questionId);
         }
 
-        long correctAnswerId = answerTemplates.findByQuestionId(questionId).stream()
+        List<AnswerTemplate> options = answerTemplates.findByQuestionId(questionId);
+        boolean validAnswerId = options.stream().anyMatch(a -> a.getId().equals(answerId));
+        if (!validAnswerId) {
+            throw new InvalidRequestException(
+                    "Answer " + answerId + " does not belong to question " + questionId + ".");
+        }
+        long correctAnswerId = options.stream()
                 .filter(AnswerTemplate::isCorrect).findFirst().orElseThrow().getId();
         boolean correct = answerId == correctAnswerId;
 
