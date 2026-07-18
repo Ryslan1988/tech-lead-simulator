@@ -1,0 +1,86 @@
+package com.techleadsim.web;
+
+import com.techleadsim.ai.AiAnalyzer;
+import com.techleadsim.domain.Interview;
+import com.techleadsim.repository.CandidateRepository;
+import com.techleadsim.service.InterviewService;
+import com.techleadsim.service.InterviewService.AnswerResult;
+import com.techleadsim.service.InterviewService.QuestionView;
+import com.techleadsim.service.StatisticService;
+import com.techleadsim.web.dto.*;
+import com.techleadsim.web.mapper.DtoMapper;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/interviews")
+public class InterviewController {
+
+    private final InterviewService interviewService;
+    private final CandidateRepository candidates;
+    private final DtoMapper mapper;
+    private final StatisticService statisticService;
+    private final AiAnalyzer aiAnalyzer;
+
+    public InterviewController(InterviewService interviewService,
+                               CandidateRepository candidates, DtoMapper mapper,
+                               StatisticService statisticService, AiAnalyzer aiAnalyzer) {
+        this.interviewService = interviewService;
+        this.candidates = candidates;
+        this.mapper = mapper;
+        this.statisticService = statisticService;
+        this.aiAnalyzer = aiAnalyzer;
+    }
+
+    @PostMapping
+    public ResponseEntity<InterviewSessionDto> startInterview(@Valid @RequestBody StartInterviewRequestDto req) {
+        Interview interview = interviewService.start(req.mode(), req.difficulty(), req.playerName());
+        List<CandidateDto> lineup = candidates.findAllByOrderBySlotAsc().stream()
+                .map(mapper::toCandidateDto).toList();
+        InterviewSessionDto body = new InterviewSessionDto(
+                interview.getId(), interview.getMode(), interview.getDifficulty(),
+                interview.getTotalQuestions(), lineup);
+        return ResponseEntity.status(HttpStatus.CREATED).body(body);
+    }
+
+    @GetMapping("/{interviewId}/question")
+    public QuestionDto getQuestion(@PathVariable long interviewId) {
+        QuestionView v = interviewService.nextQuestion(interviewId);
+        List<AnswerOptionDto> answers = v.answers().stream().map(mapper::toAnswerOption).toList();
+        return new QuestionDto(v.question().getId(), v.index(), v.total(),
+                v.question().getText(), v.question().getTimeLimitSeconds(), answers);
+    }
+
+    @PostMapping("/{interviewId}/answers")
+    public AnswerResultDto saveAnswer(@PathVariable long interviewId, @Valid @RequestBody AnswerRequestDto req) {
+        AnswerResult r = interviewService.saveAnswer(interviewId, req.questionId(), req.answerId());
+        return new AnswerResultDto(r.correct(), r.correctAnswerId(), r.pointsAwarded(), r.correctCount(),
+                r.currentStreak(), r.totalPoints(), r.answeredCount(), r.totalQuestions(), r.finished());
+    }
+
+    @GetMapping("/{interviewId}/statistic")
+    public InterviewStatisticDto getInterviewStatistic(@PathVariable long interviewId) {
+        return statisticService.compute(interviewId);
+    }
+
+    @GetMapping("/{interviewId}/result")
+    public InterviewResultDto getInterviewResult(@PathVariable long interviewId) {
+        return interviewService.result(interviewId);
+    }
+
+    @PostMapping("/{interviewId}/offer")
+    public OfferResultDto offer(@PathVariable long interviewId, @Valid @RequestBody OfferRequestDto req) {
+        com.techleadsim.domain.Candidate hired = interviewService.offer(interviewId, req.personId());
+        return new OfferResultDto(interviewId, mapper.toCandidateDto(hired),
+                hired.getName() + " has joined your team!");
+    }
+
+    @GetMapping("/{interviewId}/ai-result")
+    public AiInterviewResultDto getAiInterviewResult(@PathVariable long interviewId) {
+        return aiAnalyzer.analyze(interviewId);
+    }
+}

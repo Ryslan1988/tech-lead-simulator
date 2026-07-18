@@ -2,7 +2,7 @@ openapi: 3.1.0
 
 info:
   title: Tech Lead Simulator API
-  version: 0.1.0
+  version: 0.2.0
   description: |
     Contract-first API for the Tech Lead Simulator MVP — a game where the player
     conducts an interview with virtual candidates.
@@ -160,8 +160,12 @@ paths:
       operationId: getInterviewStatistic
       summary: Per-candidate selection statistics
       description: |
-        How many times each candidate's answer was chosen across the run, plus the
-        overall correct count. Shown before the offer screen (requirement 4).
+        Per-candidate breakdown shown before the offer screen (requirement 4). For
+        each candidate it carries both `timesChosen` (how often the **player** picked
+        that candidate's answer) and `correctAnswers` (how often that candidate was
+        **objectively** right). `correctAnswers` is the competence signal the player
+        uses to decide whom to hire; `timesChosen` reflects who the player trusted.
+        Also carries the player's overall `correctCount`.
       parameters:
         - $ref: '#/components/parameters/InterviewId'
       responses:
@@ -206,8 +210,10 @@ paths:
       operationId: getInterviewResult
       summary: Final score result of the interview
       description: |
-        The end-of-game result screen — score (correct of total), points, best
-        streak and a per-question breakdown. Maps to `getInterviewResult(id)`.
+        The **player's** score screen — correct of total, points, best streak and a
+        per-question breakdown. This is about the player, not the candidates (for
+        candidate competence see `/statistic`). Available once all rounds are answered,
+        independent of whether an offer has been made. Maps to `getInterviewResult(id)`.
       parameters:
         - $ref: '#/components/parameters/InterviewId'
       responses:
@@ -496,16 +502,17 @@ components:
           examples: [10]
         correctCount:
           type: integer
+          description: The **player's** total correct answers across the run.
           examples: [7]
         perCandidate:
           type: array
-          description: How many times each candidate's answer was chosen.
+          description: Per-candidate selection and objective-correctness breakdown.
           items:
             $ref: '#/components/schemas/CandidateSelection'
 
     CandidateSelection:
       type: object
-      required: [candidateId, name, timesChosen]
+      required: [candidateId, name, timesChosen, correctAnswers]
       properties:
         candidateId:
           type: integer
@@ -520,6 +527,14 @@ components:
           type: integer
           description: How many times the player picked this candidate's answer.
           examples: [7]
+        correctAnswers:
+          type: integer
+          description: >-
+            Objective competence signal — the number of rounds in which THIS
+            candidate's answer was the correct one, independent of what the player
+            picked. Candidates differ in competence (tied to their `strengths`), so
+            this is the primary basis for an informed hiring decision.
+          examples: [6]
 
     OfferRequest:
       type: object

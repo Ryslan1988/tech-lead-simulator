@@ -1,0 +1,9 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: techleadsim
+      POSTGRES_USER: techleadsim
+      POSTGRES_PASSWORD: techleadsim
+    ports:
+      - "5432:5432"
