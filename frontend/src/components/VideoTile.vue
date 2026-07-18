@@ -27,7 +27,7 @@ withDefaults(
         <span class="tile__name">{{ candidate.name }}</span>
         <span v-if="candidate.role" class="tile__role">{{ candidate.role }}</span>
       </span>
-      <span class="tile__mic" :aria-label="muted ? 'Микрофон выключен' : 'Микрофон включён'">
+      <span class="tile__mic" role="img" :aria-label="muted ? 'Микрофон выключен' : 'Микрофон включён'">
         {{ muted ? '🔇' : '🎤' }}
       </span>
     </div>
