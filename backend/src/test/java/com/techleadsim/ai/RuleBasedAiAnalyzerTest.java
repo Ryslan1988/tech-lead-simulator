@@ -8,9 +8,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.techleadsim.domain.*;
 
-import java.util.LinkedHashSet;
-import java.util.Set;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 class RuleBasedAiAnalyzerTest extends AbstractPostgresIntegrationTest {
@@ -39,15 +36,15 @@ class RuleBasedAiAnalyzerTest extends AbstractPostgresIntegrationTest {
         // none of which string-match the "DevOps" question topic directly. The synonym map in
         // RuleBasedAiAnalyzer should still recognize CI/CD and Docker as DevOps expertise.
         //
-        // CLASSIC mode draws 10 of the 20 seeded questions at random (SeedQuestionProvider
-        // shuffles the pool), so a single game is not guaranteed to include one of the three
-        // DevOps-topic questions. Retry with fresh interviews until one does, to keep the
-        // assertion deterministic without touching seed data or question selection.
-        long interviewId = startInterviewMissingTopic("DevOps");
+        // HARDCORE draws 20 questions and the seed holds exactly 20 MEDIUM questions, so every
+        // topic (including DevOps) is guaranteed present — an all-wrong game misses DevOps
+        // deterministically, no retry needed.
+        Interview i = interviewService.start(Mode.HARDCORE, Difficulty.MEDIUM, "You");
+        playAllWrong(i.getId());
 
-        interviewService.offer(interviewId, 3L);
+        interviewService.offer(i.getId(), 3L);
 
-        var ai = analyzer.analyze(interviewId);
+        var ai = analyzer.analyze(i.getId());
         assertThat(ai.verdict()).startsWith("Good hire");
     }
 
@@ -75,16 +72,9 @@ class RuleBasedAiAnalyzerTest extends AbstractPostgresIntegrationTest {
     }
 
     private void playAllWrong(long interviewId) {
-        playAllWrongCollectingTopics(interviewId);
-    }
-
-    /** Plays every round with a wrong answer and returns the set of topics that ended up missed. */
-    private Set<String> playAllWrongCollectingTopics(long interviewId) {
-        Set<String> topics = new LinkedHashSet<>();
         boolean finished = false;
         while (!finished) {
             QuestionView q = interviewService.nextQuestion(interviewId);
-            topics.add(q.question().getTopic());
             long wrongAnswerId = q.answers().stream()
                     .filter(a -> !a.isCorrect())
                     .findFirst()
@@ -93,24 +83,6 @@ class RuleBasedAiAnalyzerTest extends AbstractPostgresIntegrationTest {
             AnswerResult result = interviewService.saveAnswer(interviewId, q.question().getId(), wrongAnswerId);
             finished = result.finished();
         }
-        return topics;
-    }
-
-    /**
-     * Starts fresh all-wrong games until one happens to draw (and thus miss) a question on
-     * {@code topic}, returning that interview's id. Bounded retries because question selection
-     * is randomized per {@code Mode.CLASSIC} draw of 10 of the 20 seeded questions.
-     */
-    private long startInterviewMissingTopic(String topic) {
-        for (int attempt = 0; attempt < 50; attempt++) {
-            Interview interview = interviewService.start(Mode.CLASSIC, Difficulty.MEDIUM, "You");
-            Set<String> missedTopics = playAllWrongCollectingTopics(interview.getId());
-            if (missedTopics.contains(topic)) {
-                return interview.getId();
-            }
-        }
-        throw new IllegalStateException(
-                "Could not draw a game containing a " + topic + " question after 50 attempts");
     }
 
     private void playAllCorrect(long interviewId) {
