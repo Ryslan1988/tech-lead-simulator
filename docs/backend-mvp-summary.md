@@ -116,8 +116,9 @@ curl -s http://localhost:8080/api/home | head     # smoke check
 2. **N+1 read loops** in `StatisticService`, `PlayerStatsService`, `RuleBasedAiAnalyzer`,
    `InterviewService.result`, `DtoMapper` — bounded to ≤20 rounds / 4 candidates; fine for MVP,
    collapse to grouped queries if they grow.
-3. **CORS origin is hardcoded** to `http://localhost:5173` — externalize to a property before any
-   non-local deploy.
+3. ~~**CORS origin is hardcoded** to `http://localhost:5173`~~ — **done.** Externalized to
+   `app.cors.allowed-origin` (env `CORS_ALLOWED_ORIGIN`); `WebCorsConfig` also allows the
+   Render frontend origin.
 4. **Minor test-coverage gaps** — `/home` `bestResult`/`candidatesHired`, AI verdict branches, and
    the exactly-2-misses priority boundary are unasserted; a dead `finished` variable in
    `FullPlaythroughTest`.

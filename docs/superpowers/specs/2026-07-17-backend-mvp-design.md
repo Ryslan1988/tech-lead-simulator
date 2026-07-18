@@ -169,7 +169,7 @@ Lives behind the `AiAnalyzer` interface so a real LLM implementation can replace
 
 ## Frontend alignment
 
-Reconciled against `frontend-implementation-plan.md` (both sides share `openapi.yaml`):
+Reconciled against `docs/archive/frontend-mvp-plan.md` (both sides share `openapi.yaml`):
 
 - **Result before offer.** The FE fetches `/result` *before* the offer screen. Backend
   must NOT gate `/result`, `/statistic`, `/ai-result` on an offer — the status machine is
