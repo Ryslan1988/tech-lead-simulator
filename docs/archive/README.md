@@ -11,8 +11,12 @@ Do not use them to answer "how does this work today". For that, read
 |---|---|---|
 | `frontend-mvp-plan.md` | The original frontend MVP plan (routes, store, components, MSW design, 8 phases) | Its "Context" section says the frontend is a *"bare `create-vue` scaffold"* and the backend has *"no REST layer yet"* — both were true when written, neither is now. The video-call restyling that followed is specced in `docs/superpowers/specs/2026-07-18-frontend-video-call-redesign-design.md`. |
 | `frontend-mvp-progress.md` | Phase-by-phase progress tracker for the frontend build (Russian) | All 8 phases are done. Its "Definition of Done" cites Playwright drivers and screenshots in a scratchpad directory that no longer exists. Notes candidate avatars as PNG-with-fallback; they are now generated SVG (`AvatarArt`). |
-| `frontend-build-prompt.md` | A one-shot prompt meant to be pasted into a fresh Claude Code session to kick off the frontend build | Its job is done. It `@`-references the files above at their old root paths, and instructs against writing tests — a scoping decision for that session, not a standing repo rule. Was committed by accident (see the last line of `frontend-mvp-progress.md`). |
 
-`frontend-build-prompt.md` is a reasonable candidate for deletion — it has no
-value beyond the session it bootstrapped. Kept for now only because it records
-the constraints that build ran under.
+A third file, `frontend-build-prompt.md`, was deleted rather than archived — a
+one-shot prompt for bootstrapping the frontend build session, with no value once
+that session ran. Its last line in `frontend-mvp-progress.md` notes it was
+committed by accident. Recover it from history if ever needed:
+
+```bash
+git show 891c2e6:docs/archive/frontend-build-prompt.md
+```
