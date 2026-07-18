@@ -9,16 +9,18 @@ withDefaults(
     /** Candidate currently highlighted as the speaker. */
     speakingId?: number | null
     state?: 'connecting' | 'live'
+    /** Compact single-row filmstrip layout, used on the question screen. */
+    dense?: boolean
   }>(),
-  { speakingId: null, state: 'live' },
+  { speakingId: null, state: 'live', dense: false },
 )
 
 defineEmits<{ hangup: [] }>()
 </script>
 
 <template>
-  <section class="call">
-    <div class="call__grid">
+  <section class="call" aria-label="Видеозвонок с кандидатами">
+    <div :class="['call__grid', { 'call__grid--dense': dense }]">
       <VideoTile
         v-for="c in candidates"
         :key="c.id"
@@ -26,6 +28,7 @@ defineEmits<{ hangup: [] }>()
         :state="state"
         :speaking="state === 'live' && c.id === speakingId"
         :muted="c.id !== speakingId"
+        :dense="dense"
       />
     </div>
     <CallControlBar @hangup="$emit('hangup')" />
@@ -34,7 +37,7 @@ defineEmits<{ hangup: [] }>()
 
 <style scoped>
 .call {
-  background-color: var(--color-surface);
+  background-color: var(--color-bg);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   padding: var(--space-4);
@@ -44,10 +47,16 @@ defineEmits<{ hangup: [] }>()
   grid-template-columns: repeat(2, 1fr);
   gap: var(--space-3);
 }
+.call__grid--dense {
+  grid-template-columns: repeat(4, 1fr);
+}
 
 @media (max-width: 720px) {
   .call__grid {
     grid-template-columns: 1fr;
+  }
+  .call__grid--dense {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 </style>

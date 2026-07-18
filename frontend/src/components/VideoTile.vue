@@ -9,15 +9,27 @@ withDefaults(
     speaking?: boolean
     muted?: boolean
     state?: 'connecting' | 'live'
+    /** Compact filmstrip sizing, used on the question screen. */
+    dense?: boolean
   }>(),
-  { speaking: false, muted: true, state: 'live' },
+  { speaking: false, muted: true, state: 'live', dense: false },
 )
 </script>
 
 <template>
-  <div :class="['tile', { 'tile--speaking': speaking, 'tile--connecting': state === 'connecting' }]">
+  <div
+    :class="[
+      'tile',
+      { 'tile--speaking': speaking, 'tile--connecting': state === 'connecting', 'tile--dense': dense },
+    ]"
+  >
     <div class="tile__stage">
-      <CandidateAvatar :name="candidate.name" :avatar-url="candidate.avatarUrl" :size="96" />
+      <CandidateAvatar
+        :name="candidate.name"
+        :avatar-url="candidate.avatarUrl"
+        :size="dense ? 56 : 96"
+        decorative
+      />
     </div>
 
     <span v-if="state === 'connecting'" class="tile__status">Подключается…</span>
@@ -27,7 +39,12 @@ withDefaults(
         <span class="tile__name">{{ candidate.name }}</span>
         <span v-if="candidate.role" class="tile__role">{{ candidate.role }}</span>
       </span>
-      <span class="tile__mic" role="img" :aria-label="muted ? 'Микрофон выключен' : 'Микрофон включён'">
+      <span
+        v-if="state !== 'connecting'"
+        class="tile__mic"
+        role="img"
+        :aria-label="muted ? 'Микрофон выключен' : 'Микрофон включён'"
+      >
         {{ muted ? '🔇' : '🎤' }}
       </span>
     </div>
@@ -53,8 +70,8 @@ withDefaults(
   border-color: var(--color-primary);
   box-shadow: var(--shadow-md);
 }
-.tile--connecting {
-  opacity: 0.6;
+.tile--dense {
+  min-height: 100px;
 }
 .tile__stage {
   flex: 1;
@@ -62,6 +79,12 @@ withDefaults(
   align-items: center;
   justify-content: center;
   padding: var(--space-4);
+}
+.tile--connecting .tile__stage {
+  opacity: 0.6;
+}
+.tile--dense .tile__stage {
+  padding: var(--space-2);
 }
 .tile__status {
   position: absolute;
@@ -80,6 +103,12 @@ withDefaults(
   gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
   background-color: rgba(255, 255, 255, 0.85);
+}
+.tile--dense .tile__bar {
+  padding: var(--space-1) var(--space-2);
+}
+.tile--dense .tile__role {
+  display: none;
 }
 .tile__ident {
   display: flex;

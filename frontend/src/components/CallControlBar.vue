@@ -4,7 +4,7 @@ defineEmits<{ hangup: [] }>()
 // Decorative only — there is no real telephony behind these. They exist to make
 // the interview read as a video call (design screen 5). Kept out of the a11y
 // tree and tab order so nobody is offered an action that does nothing.
-const DECORATIVE = ['🎤', '📹', '🖥', '⏺', '💬', '👥', '⚙'] as const
+const DECORATIVE = ['🎤', '📹', '🖥️', '⏺️', '💬', '👥', '⚙️'] as const
 </script>
 
 <template>

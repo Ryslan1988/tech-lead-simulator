@@ -5,8 +5,8 @@ import AvatarArt from '@/components/AvatarArt.vue'
 import { paletteFor } from '@/components/avatarPalettes'
 
 const props = withDefaults(
-  defineProps<{ name: string; avatarUrl?: string; size?: number }>(),
-  { size: 56 },
+  defineProps<{ name: string; avatarUrl?: string; size?: number; decorative?: boolean }>(),
+  { size: 56, decorative: false },
 )
 
 // Resolution order: drawn portrait -> remote image -> coloured initials disc.
@@ -43,13 +43,14 @@ const dims = computed(() => ({
 
 <template>
   <span v-if="palette" class="avatar avatar--art" :style="dims">
-    <AvatarArt :palette="palette" :title="name" />
+    <AvatarArt :palette="palette" :title="name" :decorative="decorative" />
   </span>
   <img
     v-else-if="showImage"
     class="avatar avatar--img"
     :src="avatarUrl"
-    :alt="name"
+    :alt="decorative ? '' : name"
+    :aria-hidden="decorative ? 'true' : undefined"
     :style="dims"
     @error="imageFailed = true"
   />
@@ -57,8 +58,9 @@ const dims = computed(() => ({
     v-else
     class="avatar avatar--initials"
     :style="{ ...dims, backgroundColor: bgColor }"
-    :aria-label="name"
-    role="img"
+    :aria-label="decorative ? undefined : name"
+    :aria-hidden="decorative ? 'true' : undefined"
+    :role="decorative ? undefined : 'img'"
   >
     {{ initials }}
   </span>

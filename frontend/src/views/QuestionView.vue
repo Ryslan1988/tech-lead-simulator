@@ -98,6 +98,7 @@ function goToResult() {
     <div v-else class="game">
       <!-- Video call (design screen 5) -->
       <VideoCallStage
+        dense
         :candidates="interview.candidates"
         :speaking-id="speakingId"
         @hangup="ui.open()"

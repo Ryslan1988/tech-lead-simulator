@@ -1,19 +1,28 @@
 <script setup lang="ts">
 import type { AvatarPalette } from '@/components/avatarPalettes'
 
-defineProps<{ palette: AvatarPalette; title: string }>()
+withDefaults(
+  defineProps<{ palette: AvatarPalette; title: string; decorative?: boolean }>(),
+  { decorative: false },
+)
 </script>
 
 <template>
   <!-- Flat portrait matching design/third-variant.jpg: everyone wears glasses,
        identity comes from the palette. -->
-  <svg class="art" viewBox="0 0 100 100" role="img" :aria-label="title">
+  <svg
+    class="art"
+    viewBox="0 0 100 100"
+    :role="decorative ? undefined : 'img'"
+    :aria-label="decorative ? undefined : title"
+    :aria-hidden="decorative ? 'true' : undefined"
+  >
     <rect width="100" height="100" :fill="palette.bg" />
 
     <!-- Long hair sits behind the shoulders, so it is drawn first. -->
     <path
       v-if="palette.longHair"
-      d="M26 44 C26 70 30 78 32 88 L68 88 C70 78 74 70 74 44 Z"
+      d="M20 44 C20 70 28 80 32 88 L68 88 C72 80 80 70 80 44 Z"
       :fill="palette.hair"
     />
 
@@ -28,6 +37,10 @@ defineProps<{ palette: AvatarPalette; title: string }>()
       d="M28 44 C28 24 44 17 50 17 C56 17 72 24 72 44 C72 35 64 31 50 31 C36 31 28 35 28 44 Z"
       :fill="palette.hair"
     />
+
+    <!-- Eyes (behind the lenses so the glasses strokes still read on top) -->
+    <circle cx="42" cy="45" r="2.2" fill="#2b3444" />
+    <circle cx="58" cy="45" r="2.2" fill="#2b3444" />
 
     <!-- Glasses -->
     <g fill="none" stroke="#2b3444" stroke-width="2">
