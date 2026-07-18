@@ -21,6 +21,14 @@ public class RuleBasedAiAnalyzer implements AiAnalyzer {
             "Networking",   new ResourceDto("High Performance Browser Networking", "https://hpbn.co/"),
             "Basics",       new ResourceDto("MDN Learn", "https://developer.mozilla.org/en-US/docs/Learn"));
 
+    // Candidate strength labels that don't string-match a question topic, mapped to their
+    // canonical topic so the verdict logic can compare like with like.
+    private static final Map<String, String> STRENGTH_TO_TOPIC = Map.of(
+            "CSS",           "Frontend",
+            "Accessibility", "Frontend",
+            "CI/CD",         "DevOps",
+            "Docker",        "DevOps");
+
     private final InterviewRepository interviews;
     private final InterviewRoundRepository rounds;
     private final QuestionTemplateRepository questions;
@@ -71,7 +79,9 @@ public class RuleBasedAiAnalyzer implements AiAnalyzer {
         if (hiredId != null) {
             Candidate hired = candidates.findById(hiredId).orElse(null);
             if (hired != null) {
-                boolean coversGap = hired.getStrengths().stream().anyMatch(missesByTopic::containsKey);
+                boolean coversGap = hired.getStrengths().stream()
+                        .map(strength -> STRENGTH_TO_TOPIC.getOrDefault(strength, strength))
+                        .anyMatch(missesByTopic::containsKey);
                 verdict = coversGap
                         ? "Good hire — " + hired.getName() + " is strong where you struggled."
                         : "Reasonable hire — " + hired.getName() + " complements your own strengths.";
