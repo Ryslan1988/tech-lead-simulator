@@ -11,11 +11,13 @@ import StatTile from '@/components/StatTile.vue'
 import type { Schemas } from '@/api/client'
 import { useCountdown } from '@/composables/useCountdown'
 import { useInterviewStore } from '@/stores/interview'
+import { useUiStore } from '@/stores/ui'
 
 const props = defineProps<{ id: string }>()
 
 const router = useRouter()
 const interview = useInterviewStore()
+const ui = useUiStore()
 const countdown = useCountdown()
 
 const chosenAnswerId = ref<number | null>(null)
@@ -88,9 +90,12 @@ function goToResult() {
       <AppCard class="game__question">
         <div class="qhead">
           <span class="qhead__index">Вопрос {{ question.index }} из {{ question.total }}</span>
-          <span v-if="question.timeLimitSeconds" class="qhead__timer">
-            ⏱ {{ countdown.formatted.value }}
-          </span>
+          <div class="qhead__right">
+            <span v-if="question.timeLimitSeconds" class="qhead__timer">
+              ⏱ {{ countdown.formatted.value }}
+            </span>
+            <button class="qhead__pause" aria-label="Пауза" @click="ui.open()">⏸</button>
+          </div>
         </div>
         <h1 class="qtext">{{ question.text }}</h1>
         <ProgressBar :value="question.index - 1" :max="question.total" />
@@ -161,9 +166,24 @@ function goToResult() {
   text-transform: uppercase;
   letter-spacing: 1px;
 }
+.qhead__right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
 .qhead__timer {
   font-size: var(--text-sm);
   font-weight: 700;
+  color: var(--color-primary);
+}
+.qhead__pause {
+  background: none;
+  border: none;
+  font-size: var(--text-base);
+  color: var(--color-text-muted);
+  line-height: 1;
+}
+.qhead__pause:hover {
   color: var(--color-primary);
 }
 .qtext {
