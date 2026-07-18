@@ -8,6 +8,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class WebCorsConfig implements WebMvcConfigurer {
 
+    private static final String RENDER_BACKEND_ORIGIN =
+            "https://tech-lead-simulator-backend.onrender.com";
+
     private final String allowedOrigin;
 
     public WebCorsConfig(@Value("${app.cors.allowed-origin}") String allowedOrigin) {
@@ -17,7 +20,7 @@ public class WebCorsConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOrigins(allowedOrigin)
+                .allowedOrigins(allowedOrigin, RENDER_BACKEND_ORIGIN)
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS");
     }
 }
