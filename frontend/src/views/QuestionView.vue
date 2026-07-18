@@ -5,6 +5,7 @@ import { useRouter } from 'vue-router'
 import AppButton from '@/components/AppButton.vue'
 import AppCard from '@/components/AppCard.vue'
 import AppScreen from '@/components/AppScreen.vue'
+import VideoCallStage from '@/components/VideoCallStage.vue'
 import AnswerOptionRow from '@/components/AnswerOptionRow.vue'
 import ProgressBar from '@/components/ProgressBar.vue'
 import StatTile from '@/components/StatTile.vue'
@@ -30,6 +31,15 @@ const candidateById = computed(() => {
   const map = new Map<number, Schemas['Candidate']>()
   for (const c of interview.candidates) map.set(c.id, c)
   return map
+})
+
+// Ties the call grid to the game: highlight whoever "owns" the answer in focus —
+// the player's pick while the round is open, the correct author once revealed.
+const speakingId = computed(() => {
+  const answers = question.value?.answers ?? []
+  const focusId = revealed.value ? correctAnswerId.value : chosenAnswerId.value
+  if (focusId === null) return null
+  return answers.find((a) => a.answerId === focusId)?.candidateId ?? null
 })
 
 onMounted(startRound)
@@ -86,6 +96,14 @@ function goToResult() {
     <div v-else-if="!question" class="state">Загрузка вопроса…</div>
 
     <div v-else class="game">
+      <!-- Video call (design screen 5) -->
+      <VideoCallStage
+        dense
+        :candidates="interview.candidates"
+        :speaking-id="speakingId"
+        @hangup="ui.open()"
+      />
+
       <!-- Question (design screen 6) -->
       <AppCard class="game__question">
         <div class="qhead">

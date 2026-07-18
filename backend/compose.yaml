@@ -7,3 +7,9 @@ services:
       POSTGRES_PASSWORD: techleadsim
     ports:
       - "5432:5432"
+    volumes:
+      # Named volume so game data survives `docker compose down` and restarts.
+      - techleadsim-db-data:/var/lib/postgresql/data
+
+volumes:
+  techleadsim-db-data:
