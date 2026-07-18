@@ -1,16 +1,21 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
+import AvatarArt from '@/components/AvatarArt.vue'
+import { paletteFor } from '@/components/avatarPalettes'
+
 const props = withDefaults(
   defineProps<{ name: string; avatarUrl?: string; size?: number }>(),
   { size: 56 },
 )
 
-// Seed avatar images (/assets/candidates/*.png) may not exist; fall back to a
-// coloured initials disc so avatars never render as a broken image.
+// Resolution order: drawn portrait -> remote image -> coloured initials disc.
+// The seed `avatarUrl`s (/assets/candidates/*.png) point at files that do not
+// exist, so without the portrait every avatar would fall through to initials.
 const imageFailed = ref(false)
 
-const showImage = computed(() => !!props.avatarUrl && !imageFailed.value)
+const palette = computed(() => paletteFor(props.avatarUrl))
+const showImage = computed(() => !palette.value && !!props.avatarUrl && !imageFailed.value)
 
 const initials = computed(() =>
   props.name
@@ -37,8 +42,11 @@ const dims = computed(() => ({
 </script>
 
 <template>
+  <span v-if="palette" class="avatar avatar--art" :style="dims">
+    <AvatarArt :palette="palette" :title="name" />
+  </span>
   <img
-    v-if="showImage"
+    v-else-if="showImage"
     class="avatar avatar--img"
     :src="avatarUrl"
     :alt="name"
@@ -66,6 +74,9 @@ const dims = computed(() => ({
   flex-shrink: 0;
   border: 2px solid var(--color-surface);
   box-shadow: var(--shadow-sm);
+}
+.avatar--art {
+  overflow: hidden;
 }
 .avatar--initials {
   color: var(--color-text-inverse);
