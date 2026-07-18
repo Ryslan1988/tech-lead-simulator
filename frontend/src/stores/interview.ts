@@ -21,6 +21,8 @@ export const useInterviewStore = defineStore('interview', () => {
   const totalPoints = ref(0)
   const answeredCount = ref(0)
   const finished = ref(false)
+  // Per-round correctness, in order — drives the intermediate-stats checkmarks.
+  const outcomes = ref<boolean[]>([])
 
   // --- Post-run payloads ---
   const statistic = ref<Schemas['InterviewStatistic'] | null>(null)
@@ -49,6 +51,7 @@ export const useInterviewStore = defineStore('interview', () => {
     totalPoints.value = 0
     answeredCount.value = 0
     finished.value = false
+    outcomes.value = []
     currentQuestion.value = null
     lastFeedback.value = null
     statistic.value = null
@@ -124,6 +127,7 @@ export const useInterviewStore = defineStore('interview', () => {
     totalPoints.value = data.totalPoints ?? totalPoints.value
     answeredCount.value = data.answeredCount
     finished.value = data.finished ?? false
+    outcomes.value.push(data.correct)
     return true
   }
 
@@ -213,6 +217,7 @@ export const useInterviewStore = defineStore('interview', () => {
     totalPoints,
     answeredCount,
     finished,
+    outcomes,
     statistic,
     offerResult,
     result,
