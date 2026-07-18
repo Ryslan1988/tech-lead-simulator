@@ -98,8 +98,12 @@ export interface paths {
         };
         /**
          * Per-candidate selection statistics
-         * @description How many times each candidate's answer was chosen across the run, plus the
-         *     overall correct count. Shown before the offer screen (requirement 4).
+         * @description Per-candidate breakdown shown before the offer screen (requirement 4). For
+         *     each candidate it carries both `timesChosen` (how often the **player** picked
+         *     that candidate's answer) and `correctAnswers` (how often that candidate was
+         *     **objectively** right). `correctAnswers` is the competence signal the player
+         *     uses to decide whom to hire; `timesChosen` reflects who the player trusted.
+         *     Also carries the player's overall `correctCount`.
          */
         get: operations["getInterviewStatistic"];
         put?: never;
@@ -139,8 +143,10 @@ export interface paths {
         };
         /**
          * Final score result of the interview
-         * @description The end-of-game result screen — score (correct of total), points, best
-         *     streak and a per-question breakdown. Maps to `getInterviewResult(id)`.
+         * @description The **player's** score screen — correct of total, points, best streak and a
+         *     per-question breakdown. This is about the player, not the candidates (for
+         *     candidate competence see `/statistic`). Available once all rounds are answered,
+         *     independent of whether an offer has been made. Maps to `getInterviewResult(id)`.
          */
         get: operations["getInterviewResult"];
         put?: never;
@@ -339,9 +345,12 @@ export interface components {
         InterviewStatistic: {
             /** @example 10 */
             totalQuestions: number;
-            /** @example 7 */
+            /**
+             * @description The **player's** total correct answers across the run.
+             * @example 7
+             */
             correctCount: number;
-            /** @description How many times each candidate's answer was chosen. */
+            /** @description Per-candidate selection and objective-correctness breakdown. */
             perCandidate: components["schemas"]["CandidateSelection"][];
         };
         CandidateSelection: {
@@ -356,6 +365,11 @@ export interface components {
              * @example 7
              */
             timesChosen: number;
+            /**
+             * @description Objective competence signal — the number of rounds in which THIS candidate's answer was the correct one, independent of what the player picked. Candidates differ in competence (tied to their `strengths`), so this is the primary basis for an informed hiring decision.
+             * @example 6
+             */
+            correctAnswers: number;
         };
         /** @description Body of `offer(person)`. */
         OfferRequest: {
