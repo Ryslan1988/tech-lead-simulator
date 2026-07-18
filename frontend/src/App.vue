@@ -1,10 +1,14 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { RouterView } from 'vue-router'
+
+import PauseModal from '@/components/PauseModal.vue'
+</script>
 
 <template>
-  <main>
-    <h1>Tech Lead Simulator</h1>
-    <p>Coming soon.</p>
-  </main>
+  <RouterView v-slot="{ Component, route }">
+    <component :is="Component" :key="route.fullPath" />
+  </RouterView>
+  <PauseModal />
 </template>
 
 <style scoped></style>
