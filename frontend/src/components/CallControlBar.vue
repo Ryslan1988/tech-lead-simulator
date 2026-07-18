@@ -9,16 +9,14 @@ const DECORATIVE = ['🎤', '📹', '🖥', '⏺', '💬', '👥', '⚙'] as con
 
 <template>
   <div class="bar">
-    <button
+    <span
       v-for="icon in DECORATIVE"
       :key="icon"
-      type="button"
       class="bar__btn"
       aria-hidden="true"
-      tabindex="-1"
     >
       {{ icon }}
-    </button>
+    </span>
     <button type="button" class="bar__btn bar__btn--end" @click="$emit('hangup')">
       Завершить
     </button>
