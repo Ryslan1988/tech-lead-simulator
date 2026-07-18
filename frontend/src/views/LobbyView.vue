@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import AppButton from '@/components/AppButton.vue'
 import AppCard from '@/components/AppCard.vue'
 import AppScreen from '@/components/AppScreen.vue'
-import CandidateCard from '@/components/CandidateCard.vue'
+import VideoCallStage from '@/components/VideoCallStage.vue'
 import { useInterviewStore } from '@/stores/interview'
 
 const props = defineProps<{ id: string }>()
@@ -21,14 +21,14 @@ function begin() {
   <AppScreen width="wide">
     <AppCard class="lobby">
       <h1 class="lobby__title">Ожидание собеседования</h1>
-      <p class="lobby__subtitle">Кандидаты готовятся. Скоро начнём!</p>
+      <p class="lobby__subtitle">Кандидаты подключаются к звонку. Скоро начнём!</p>
 
-      <div class="lobby__grid">
-        <div v-for="c in interview.candidates" :key="c.id" class="lobby__tile">
-          <CandidateCard :candidate="c" :avatar-size="72" />
-          <span class="lobby__live" aria-hidden="true">● в сети</span>
-        </div>
-      </div>
+      <VideoCallStage
+        class="lobby__call"
+        :candidates="interview.candidates"
+        state="connecting"
+        @hangup="router.push({ name: 'home' })"
+      />
 
       <AppButton class="lobby__start" @click="begin">Начать собеседование →</AppButton>
     </AppCard>
@@ -51,34 +51,11 @@ function begin() {
 .lobby__subtitle {
   color: var(--color-text-muted);
 }
-.lobby__grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-6);
+.lobby__call {
   width: 100%;
-  margin: var(--space-4) 0;
-}
-.lobby__tile {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-4);
-  background-color: var(--color-bg);
-  border-radius: var(--radius-md);
-}
-.lobby__live {
-  font-size: 12px;
-  color: var(--color-success);
-  font-weight: 600;
+  margin: var(--space-2) 0;
 }
 .lobby__start {
   margin-top: var(--space-2);
-}
-
-@media (max-width: 720px) {
-  .lobby__grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
 }
 </style>
